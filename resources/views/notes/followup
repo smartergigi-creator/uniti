@@ -1,0 +1,31 @@
+Task 1: Dashboard Statistics Module
+
+Task Name:
+Dashboard Statistics and System Overview
+
+Task Description:
+Developed a dashboard module to display key performance indicators including total users, total eBooks, daily uploads, and active users, providing a real-time overview of system activity.
+
+✅ Task 2: User Activity Monitoring Module
+
+Task Name:
+User Upload Activity Monitoring
+
+Task Description:
+Implemented a monitoring system to track and display individual user upload activities, including upload counts and usage history, enabling effective supervision of system usage.
+
+✅ Task 3: User Role and Account Management
+
+Task Name:
+User Role and Account Management System
+
+Task Description:
+Designed and integrated a user management module to view and manage user roles, account status, and access permissions, with administrative controls for blocking, activating, and managing user accounts.
+
+✅ Task 4: Administrative Control and Security
+
+Task Name:
+Administrative Access Control and Security Management
+
+Task Description:
+Implemented role-based access control and middleware protection to ensure that administrative features are accessible only to authorized users, enhancing system security.

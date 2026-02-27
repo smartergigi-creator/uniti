@@ -1,0 +1,71 @@
+Task 1: Design Login UI
+
+Task Name: Create Login Page Interface
+
+Description:
+Design and develop a responsive and user-friendly login page for the Ebook system. Implement input fields for email and password, validation messages, and navigation links for new users.
+
+🟢 Task 2: Implement JWT Authentication API
+
+Task Name: Develop JWT-Based Authentication API
+
+Description:
+Create secure API endpoints for user registration and login using JWT. Generate access tokens upon successful authentication and validate tokens for protected API routes.
+
+🟢 Task 3: Token Management (Cookie & Storage)
+
+Task Name: Configure Token Storage and Management
+
+Description:
+Implement secure storage of JWT tokens using HttpOnly cookies and local storage. Handle token creation, retrieval, expiration, and deletion during login and logout.
+
+🟢 Task 4: Protect Web Routes Using Middleware
+
+Task Name: Implement Route Protection with Middleware
+
+Description:
+Develop and configure custom middleware to restrict access to dashboard and ebook pages. Ensure only authenticated users can access protected routes.
+
+🟢 Task 5: Protect API Routes Using JWT Middleware
+
+Task Name: Secure API Endpoints with JWT Middleware
+
+Description:
+Apply JWT authentication middleware to API routes to validate user requests. Restrict sensitive operations such as upload, delete, and share generation to authorized users.
+
+🟢 Task 6: Implement Logout and Session Handling
+
+Task Name: Develop Secure Logout and Session Management
+
+Description:
+Implement logout functionality to invalidate JWT tokens, clear cookies and local storage, and terminate active sessions securely.
+
+🟢 Task 7: Prevent Unauthorized Access via Browser Navigation
+
+Task Name: Disable Back Button and Cache Access
+
+Description:
+Configure cache-control headers and middleware to prevent access to protected pages using browser back and forward buttons after logout.
+
+🟢 Task 8: Role-Based Access Control (Admin)
+
+Task Name: Implement Admin Access Control
+
+Description:
+Restrict administrative features such as ebook upload, deletion, and share link generation using role-based authorization middleware.
+
+🟢 Task 9: Implement Client-Side Authentication Guard
+
+Task Name: Develop Frontend Authentication Guard
+
+Description:
+Add JavaScript-based authentication checks to verify token availability and validity before allowing access to protected pages and actions.
+
+🟢 Task 10: Testing and Security Validation
+
+Task Name: Perform Authentication Testing and Security Review
+
+Description:
+Test all authentication scenarios including login, logout, token expiration, unauthorized access, and error handling. Validate system security against common vulnerabilities.
+
+

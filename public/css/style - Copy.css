@@ -1,0 +1,459 @@
+/* =======================================
+   GLOBAL LAYOUT
+======================================= */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 900px;
+    margin: 25px auto;
+}
+
+/* ======================================= */
+/* UPLOAD / DASHBOARD                      */
+/* ======================================= */
+
+.upload-box {
+    width: 100%;
+    padding: 35px;
+    border: 2px dashed #bfbfbf;
+    background: #f7f5ff;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.upload-box:hover {
+    border-color: #4bdeff;
+    background: #e7f7ff;
+}
+
+.upload-icon {
+    font-size: 50px;
+    margin-bottom: 10px;
+    color: #21a9ff;
+}
+
+.upload-text {
+    font-size: 16px;
+    color: #555;
+}
+
+.upload-subtext {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #555;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.ebook-input {
+    width: 280px;
+    padding: 12px;
+    border: 1px solid #c4c4c4;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.select-btn {
+    padding: 10px 20px;
+    border: none;
+    background: #111212;
+    color: white;
+    border-radius: 8px;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.select-btn:hover {
+    background: #5d5e62;
+}
+
+.upload-btn {
+    background: #000;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.file-list {
+    margin-top: 20px;
+}
+
+#fileItems li {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* ======================================= */
+/* TABLE (DASHBOARD)                       */
+/* ======================================= */
+
+.table-wrapper {
+    margin-top: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #f4f6fb;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    padding: 14px 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table td {
+    padding: 14px 10px;
+    font-size: 13px;
+    color: #444;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.table tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+.table tr:hover td {
+    background: #eef2ff;
+}
+
+.table .name {
+    font-weight: 600;
+    color: #222;
+}
+
+/* Action buttons override Bootstrap */
+.btn-primary {
+    background: #3b82f6 !important;
+    border: none !important;
+}
+
+.btn-info {
+    background: #14b8a6 !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: #ef4444 !important;
+    border: none !important;
+}
+
+/* =======================================
+   FLIPBOOK VIEWER
+======================================= */
+
+#viewer-wrapper {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#flipbook {
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+/* ❗ Turn.js controls page size */
+#flipbook .page {
+    background: #ffffff;
+}
+
+#flipbook .page img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#flipbook .page.cover img {
+    object-fit: cover;
+}
+
+/* =======================================
+   FLIPBOOK NAV (DESKTOP ONLY)
+======================================= */
+
+.nav-buttons {
+    position: absolute;
+    bottom: -55px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+    z-index: 999;
+}
+
+.nav-buttons img {
+    width: 36px;
+    cursor: pointer;
+}
+/* =======================================
+   🔍 ZOOM CONTROLS (ADDED)
+======================================= */
+
+.zoom-controls {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10000;
+    display: flex;
+    gap: 8px;
+}
+
+.zoom-controls button {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: none;
+    background: #111;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    transition: 0.2s;
+}
+
+.zoom-controls button:hover {
+    background: #444;
+}
+
+/* =======================================
+   MOBILE – SINGLE PAGE EBOOK
+======================================= */
+
+@media (max-width: 900px) {
+
+    #viewer-wrapper {
+        height: 100vh;
+    }
+
+    #flipbook {
+        margin: auto;
+        box-shadow: none;
+        border-radius: 0;
+        touch-action: pan-y;
+    }
+
+    /* ❌ No blank page on mobile */
+    #flipbook .blank {
+        display: none !important;
+    }
+
+    /* ❌ Hide arrows on mobile */
+    .nav-buttons {
+        display: none !important;
+    }
+    /* 🔍 Move zoom buttons for mobile */
+    .zoom-controls {
+        top: 10px;
+        right: 10px;
+    }
+
+}
+
+/* =======================================
+   FULLSCREEN MODE (DESKTOP + MOBILE)
+======================================= */
+
+.fullscreen-active {
+    position: fixed !important;
+    inset: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #111;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Ensure viewer fills fullscreen */
+.fullscreen-active #viewer-wrapper {
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0;
+}
+
+/* Center flipbook properly */
+.fullscreen-active #flipbook {
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: none;
+}
+
+/* =======================================
+   MOBILE FULLSCREEN TUNING
+======================================= */
+
+@media (max-width: 900px) {
+
+    .fullscreen-active {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .fullscreen-active #viewer-wrapper {
+        height: 100vh !important;
+        width: 100vw !important;
+    }
+
+    .fullscreen-active #flipbook {
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* Keep zoom buttons accessible */
+    .fullscreen-active .zoom-controls {
+        top: 10px;
+        right: 10px;
+    }
+
+    /* Hide nav arrows in fullscreen mobile */
+    .fullscreen-active .nav-buttons {
+        display: none !important;
+    }
+}
+
+/* =======================================
+   FULLSCREEN BUTTON ACTIVE STATE
+======================================= */
+
+.fullscreen-active #fullscreenToggle {
+    background: #444;
+}
+/* 📘 MANUAL EBOOK HEADING ROW */
+.ebook-group-row td {
+    background: #eef2ff;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1e293b;
+    padding: 14px;
+    border-top: 2px solid #c7d2fe;
+}
+
+/* 📄 FILE NAME INDENT */
+.file-name {
+    padding-left: 30px;
+    font-weight: 500;
+}
+
+/* FILE COUNT */
+.file-count {
+    font-weight: 500;
+    color: #475569;
+    margin-left: 6px;
+    font-size: 13px;
+}
+/* 🔝 TOP VIEWER TOOLBAR */
+/* 🔝 TOP RIGHT VIEWER TOOLBAR */
+.viewer-toolbar {
+    position: absolute;
+    top: 1px;
+    right: 15px;          /* 👈 move to right */
+    left: auto;           /* ❌ remove center */
+    transform: none;      /* ❌ remove translate */
+    background: rgba(0, 0, 0, 0.75);
+    padding: 8px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10000;
+}
+
+
+.viewer-toolbar button {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.viewer-toolbar button:hover {
+    background: #333;
+}
+
+.page-indicator {
+    color: #fff;
+    font-size: 13px;
+    padding: 0 6px;
+    white-space: nowrap;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.3);
+    margin: 0 6px;
+}
+
+/* 📱 MOBILE TUNING */
+@media (max-width: 900px) {
+    .viewer-toolbar {
+        top: 10px;
+        padding: 6px 10px;
+    }
+
+    .viewer-toolbar button {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
+
+    .page-indicator {
+        display: none; /* cleaner on mobile */
+    }
+   #prevPage,
+    #nextPage,
+    .toolbar-divider {
+        display: none !important;
+    }
+}
+
+#flipbook {
+    transform-origin: center center;
+    transition: transform 0.2s ease;
+    touch-action: pan-y;
+}
+
+/* Desktop grab cursor */
+#flipbook.zoomed {
+    cursor: grab;
+}
+
+#flipbook.zoomed:active {
+    cursor: grabbing;
+}
+.viewer-toolbar button {
+    touch-action: manipulation;
+    pointer-events: auto;
+}
