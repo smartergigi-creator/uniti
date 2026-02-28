@@ -192,7 +192,8 @@
                             </div>
 
                             <div class="book-actions" aria-label="Book actions">
-                                <a href="/ebook/view/{{ $book->id }}" class="book-action-btn" title="Preview">
+                                <a href="{{ route('ebook.view', $book->slug) }}" class="book-action-btn"
+                                    title="Preview">
                                     <i class="bi bi-eye"></i>
                                     <span>Preview</span>
                                 </a>

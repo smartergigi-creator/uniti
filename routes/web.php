@@ -93,8 +93,8 @@ Route::middleware(['auth','serp.auth','nocache'])->group(function () {
     });
 
 
-    Route::get('/ebook/view/{id}', [EbookController::class, 'view']);
-
+    Route::get('/ebook/{slug}', [EbookController::class, 'view'])
+    ->name('ebook.view');
 
     /* ---------------- Upload ---------------- */
 

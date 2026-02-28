@@ -31,13 +31,15 @@
                                     <small class="text-muted">{{ $ebook->file_title }}</small>
                                 </td>
                                 <td>{{ $ebook->category->name ?? '-' }}</td>
-                                <td>{{ $ebook->uploader->name ?? $ebook->uploadedByUser->name ?? '-' }}</td>
+                                <td>{{ $ebook->uploader->name ?? ($ebook->uploadedByUser->name ?? '-') }}</td>
                                 <td>{{ $ebook->created_at?->format('d-m-Y h:i A') }}</td>
                                 <td>
-                                    <a href="{{ url('/ebook/view/' . $ebook->id) }}" class="btn btn-sm btn-primary me-1" target="_blank" rel="noopener">
+                                    <a href="{{ route('ebook.view', $ebook->slug) }}" class="btn btn-sm btn-primary me-1"
+                                        target="_blank" rel="noopener">
                                         Preview
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-danger" onclick="deleteEbook({{ $ebook->id }})">
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                        onclick="deleteEbook({{ $ebook->id }})">
                                         Delete
                                     </button>
                                 </td>
