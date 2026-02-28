@@ -122,5 +122,7 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    'url' => env('APP_URL', 'http://localhost'),
 
+    'file_root' => env('FILE_ROOT', 'public'),
 ];

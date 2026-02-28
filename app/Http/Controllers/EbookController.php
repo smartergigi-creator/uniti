@@ -88,8 +88,8 @@ class EbookController extends Controller
                     . '_' . time()
                     . '_' . Str::random(4);
 
-                // ✅ Works in local + production automatically
-                $basePath = public_path("ebooks/$folder");
+                $rootFolder = config('app.file_root');
+                $basePath = base_path("../{$rootFolder}/ebooks/$folder");
 
                 if (!File::exists($basePath)) {
                     File::makeDirectory($basePath, 0755, true);
@@ -147,7 +147,8 @@ class EbookController extends Controller
     {
         $ebook = Ebook::where('slug', $slug)->firstOrFail();
 
-        $pdfPath = public_path($ebook->pdf_path);
+        $rootFolder = config('app.file_root');
+        $pdfPath = base_path("../{$rootFolder}/" . $ebook->pdf_path);
 
         if (!file_exists($pdfPath)) {
             abort(404, 'PDF file not found');
@@ -165,7 +166,6 @@ class EbookController extends Controller
 
             $ebook = Ebook::findOrFail($id);
 
-            // Remove related rows safely
             if (Schema::hasTable('ebook_pages')) {
                 DB::table('ebook_pages')
                     ->where('ebook_id', $ebook->id)
@@ -178,8 +178,8 @@ class EbookController extends Controller
                     ->delete();
             }
 
-            // Delete folder
-            $folderPath = public_path("ebooks/{$ebook->folder_path}");
+            $rootFolder = config('app.file_root');
+            $folderPath = base_path("../{$rootFolder}/ebooks/{$ebook->folder_path}");
 
             if (File::exists($folderPath)) {
                 File::deleteDirectory($folderPath);
