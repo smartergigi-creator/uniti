@@ -25,7 +25,8 @@ class Ebook extends Model
         'share_enabled',
         'shared_by',
         'max_views',
-        'current_views'
+        'current_views',
+        'slug',
 ];
 
 

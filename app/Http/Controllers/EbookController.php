@@ -61,117 +61,20 @@ public function store(Request $request)
 {
     try {
 
-        // Always get fresh data
-        $user = auth()->user()->fresh();
+        $user = auth()->user();
 
-
-        /* ============================
-           1. Upload Permission
-        ============================ */
-        $hasUploadAccess = $user && (
-            $user->role === 'admin'
-            || $user->can_upload
-        );
-
-        if (!$hasUploadAccess) {
+        if (!$user || (!$user->can_upload && $user->role !== 'admin')) {
             return response()->json([
                 'status' => false,
                 'message' => 'You are not allowed to upload'
             ], 403);
         }
 
-
-        /* ============================
-           3. COUNT EXISTING UPLOADS
-        ============================ */
-
-        // Already uploaded ebooks (reliable)
-        $uploadedCount = Ebook::where(function ($q) use ($user) {
-            $q->where('user_id', $user->id)
-              ->orWhere('uploaded_by', $user->id);
-        })
-        ->when($user->upload_reset_at, function ($q, $resetAt) {
-            $q->where('created_at', '>', $resetAt);
-        })
-        ->count();
-
-        // New files count
-        $newFilesCount = $request->hasFile('pdfs')
-            ? count($request->file('pdfs'))
-            : 0;
-
-        $totalAfterUpload = $uploadedCount + $newFilesCount;
-
-
-        $uploadLimit = (int) $user->upload_limit;
-        $hasFiniteLimit = $user->role !== 'admin' && $uploadLimit > 0;
-
-        if ($hasFiniteLimit && $totalAfterUpload > $uploadLimit) {
-
-            $remaining = max(
-                0,
-                $uploadLimit - $uploadedCount
-            );
-
-            return response()->json([
-                'status' => false,
-                'message' =>
-                    "Upload limit exceeded. You can upload only {$remaining} more file(s)."
-            ], 403);
-        }
-
-
-        /* ============================
-           4. Validation
-        ============================ */
-
         $request->validate([
             'ebook_name' => 'required|string|max:255',
-            'category_id' => 'nullable|exists:categories,id',
-            'subcategory_id' => 'nullable|exists:categories,id',
-            'related_subcategory_id' => 'nullable|exists:categories,id',
             'pdfs'       => 'required|array|min:1',
             'pdfs.*'     => 'required|file|mimes:pdf|max:51200',
         ]);
-
-        if ($request->filled('category_id') && $request->filled('subcategory_id')) {
-            $isValidSubcategory = Category::where('id', $request->subcategory_id)
-                ->where('parent_id', $request->category_id)
-                ->exists();
-
-            if (!$isValidSubcategory) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid subcategory for selected category.'
-                ], 422);
-            }
-        }
-
-        if ($request->filled('subcategory_id') && $request->filled('related_subcategory_id')) {
-            $isValidRelatedSubcategory = Category::where('id', $request->related_subcategory_id)
-                ->where('parent_id', $request->subcategory_id)
-                ->exists();
-
-            if (!$isValidRelatedSubcategory) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Invalid related subcategory for selected subcategory.'
-                ], 422);
-            }
-        }
-
-
-        if (!$request->hasFile('pdfs')) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No PDF files uploaded.'
-            ], 400);
-        }
-
-
-        /* ============================
-           5. Prepare Files
-        ============================ */
 
         $files = $request->file('pdfs');
 
@@ -179,24 +82,12 @@ public function store(Request $request)
             $files = [$files];
         }
 
-        usort($files, fn ($a, $b) =>
-            strcmp($a->getClientOriginalName(), $b->getClientOriginalName())
-        );
-
-
         $created = 0;
-        $failed  = 0;
         $manualTitle = $request->ebook_name;
-
-
-        /* ============================
-           6. Upload
-        ============================ */
 
         foreach ($files as $file) {
 
             if (!$file->isValid()) {
-                $failed++;
                 continue;
             }
 
@@ -211,58 +102,48 @@ public function store(Request $request)
                 . '_' . time()
                 . '_' . Str::random(4);
 
-            $basePath = public_path("ebooks/$folder");
-            
+            // 🔥 SAVE DIRECTLY INSIDE public_html (unchanged)
+            $basePath = base_path('../public_html/ebooks/' . $folder);
 
             if (!File::exists($basePath)) {
-                File::makeDirectory($basePath, 0777, true);
+                File::makeDirectory($basePath, 0755, true);
             }
 
             $pdfName = Str::slug($originalName) . '.pdf';
 
             $file->move($basePath, $pdfName);
 
+            // ✅ Generate UNIQUE slug safely
+            $baseSlug = Str::slug($manualTitle);
+            $slug = $baseSlug;
+            $counter = 1;
 
-            $ebook = Ebook::create([
+            while (Ebook::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
 
+            Ebook::create([
                 'title'       => $manualTitle,
+                'slug'        => $slug,
                 'file_title'  => $safeTitle,
-                'pdf_path'    => "ebooks/$folder/$pdfName",
+                'pdf_path'    => "ebooks/$folder/$pdfName", // DON'T CHANGE
                 'folder_path' => $folder,
                 'page_count'  => 0,
                 'category_id' => $request->category_id,
                 'subcategory_id' => $request->subcategory_id,
                 'related_subcategory_id' => $request->related_subcategory_id,
-
-                // MAIN FIELD ✅
                 'user_id'     => $user->id,
-
-                // optional
                 'uploaded_by' => $user->id,
             ]);
 
             $created++;
         }
 
-
-        /* ============================
-           7. Response
-        ============================ */
-
-        if ($created === 0) {
-            return response()->json([
-                'status' => false,
-                'message' => 'All uploaded files are invalid.'
-            ], 400);
-        }
-
         return response()->json([
             'status' => true,
-            'message' =>
-                "$created ebook(s) uploaded successfully." .
-                ($failed ? " $failed file(s) skipped." : '')
+            'message' => "$created ebook(s) uploaded successfully."
         ]);
-
 
     } catch (\Throwable $e) {
 
@@ -381,11 +262,12 @@ public function store(Request $request)
 
 public function ensurePagesExist(Ebook $ebook)
 {
-    $pdfFile = public_path($ebook->pdf_path);
+    $pdfFile = base_path('../public_html/' . $ebook->pdf_path);
 
     if (!file_exists($pdfFile)) {
         return false;
     }
+
     return true;
 }
 
@@ -393,15 +275,18 @@ public function ensurePagesExist(Ebook $ebook)
        4. VIEW FLIPBOOK (ADMIN / DASHBOARD)
     ====================================================== */
     public function view($id)
-    {
-        $ebook = Ebook::findOrFail($id);
+{
+    $ebook = Ebook::findOrFail($id);
 
-        if (!file_exists(public_path($ebook->pdf_path))) {
-            abort(404, 'PDF file not found');
-        }
+    // 🔥 Check inside public_html
+    $pdfPath = base_path('../public_html/' . $ebook->pdf_path);
 
-        return view('ebook.flipbook', compact('ebook'));
+    if (!file_exists($pdfPath)) {
+        abort(404, 'PDF file not found');
     }
+
+    return view('ebook.flipbook', compact('ebook'));
+}
 
     /* ======================================================
        5. PUBLIC VIEW (OPTIONAL)

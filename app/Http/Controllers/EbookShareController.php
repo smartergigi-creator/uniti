@@ -97,30 +97,37 @@ class EbookShareController extends Controller
         }
     }
 
-    public function view($token)
-    {
-        $ebook = Ebook::where('share_token', $token)
-            ->where('share_enabled', 1)
-            ->first();
+   public function view($token)
+{
+    $ebook = Ebook::where('share_token', $token)
+        ->where('share_enabled', 1)
+        ->first();
 
-        if (!$ebook) {
-            return view('ebook/errors.share-invalid');
-        }
-
-        if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
-            return view('ebook/errors.share-expired');
-        }
-
-        if ($ebook->max_views !== null && (int) $ebook->max_views > 0 && $ebook->current_views >= $ebook->max_views) {
-            return view('ebook/errors.limit-reached');
-        }
-
-        $ebook->increment('current_views');
-
-        if (!file_exists(public_path($ebook->pdf_path))) {
-            return view('ebook.loading', compact('ebook'));
-        }
-
-        return view('ebook.flipbook', compact('ebook'));
+    if (!$ebook) {
+        return view('ebook/errors.share-invalid');
     }
+
+    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+        return view('ebook/errors.share-expired');
+    }
+
+    if (
+        $ebook->max_views !== null &&
+        (int) $ebook->max_views > 0 &&
+        $ebook->current_views >= $ebook->max_views
+    ) {
+        return view('ebook/errors.limit-reached');
+    }
+
+    $ebook->increment('current_views');
+
+    // 🔥 IMPORTANT FIX — Check inside public_html
+    $pdfPath = base_path('../public_html/' . $ebook->pdf_path);
+
+    if (!file_exists($pdfPath)) {
+        return view('ebook/errors.share-invalid');
+    }
+
+    return view('ebook.flipbook', compact('ebook'));
+}
 }
