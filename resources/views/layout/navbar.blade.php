@@ -42,7 +42,7 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ $homeSectionUrl }}">Ebooks</a>
+                    <a class="nav-link" href="{{ url('/website') }}">Website</a>
                 </li>
 
                 @foreach ($menuCategories as $menuCategory)
@@ -150,5 +150,3 @@
     </div>
 
 </nav>
-
-
