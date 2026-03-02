@@ -13,4 +13,9 @@ Thumbs.db
 
 /storage/*.key
 
-/public/
+
+/public/*
+!/public/css/
+/public/css/*
+!/public/css/style.css
+

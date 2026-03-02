@@ -1,0 +1,1791 @@
+/* =========================================================
+   GLOBAL RESET
+========================================================= */
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+/* ONLY EBOOK VIEW BACKGROUND */
+body.ebook-view {
+    background: #e6e6e6;
+}
+
+/* Viewer wrapper */
+body.ebook-view #viewer-wrapper {
+    background: #e6e6e6;
+}
+
+body.ebook-view .ebook-header-row {
+    padding: 12px 20px 0;
+}
+
+body.ebook-view .ebook-header-col {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Other pages stay white */
+body:not(.ebook-view) {
+    background: #ffffff;
+}
+
+/* User layout: keep footer at bottom without extra white gap */
+body.dashboard-page,
+body.ebook-home {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.dashboard-page main,
+body.ebook-home main {
+    flex: 1 0 auto;
+}
+
+body.dashboard-page footer,
+body.ebook-home footer {
+    margin-top: auto;
+}
+
+body.admin-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.admin-page #app {
+    flex: 1 0 auto;
+}
+
+body.admin-page .site-footer {
+    position: relative;
+    z-index: 1040;
+}
+
+/* Admin layout: avoid extra page scroll caused by #main min-height:100vh */
+body.admin-page #main {
+    min-height: 0 !important;
+}
+
+/* Desktop admin: sidebar should be in normal flow (not fixed) */
+@media (min-width: 992px) {
+    body.admin-page #app {
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        min-height: 100vh;
+    }
+
+    body.admin-page #sidebar {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        height: auto !important;
+        width: 300px;
+        overflow: visible !important;
+        max-width: 300px;
+    }
+
+    body.admin-page #sidebar .sidebar-wrapper {
+        position: relative !important;
+        top: auto !important;
+        bottom: auto !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 100%;
+        overflow: visible !important;
+    }
+
+    body.admin-page #main {
+        margin-left: 0 !important;
+        width: auto !important;
+        min-width: 0;
+    }
+
+    body.sidebar-collapsed.admin-page #sidebar {
+        width: 80px;
+        max-width: 80px;
+    }
+
+    body.sidebar-collapsed.admin-page #app {
+        grid-template-columns: 80px minmax(0, 1fr);
+    }
+
+    body.sidebar-collapsed.admin-page #main {
+        margin-left: 0 !important;
+        width: auto !important;
+    }
+}
+
+/* Navbar should scroll with page (not sticky/fixed) */
+body.admin-page .custom-navbar,
+body.dashboard-page .custom-navbar,
+body.ebook-home .custom-navbar {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+}
+
+/* ===============================
+   COMMON SITE FOOTER
+================================ */
+.site-footer {
+    background: linear-gradient(180deg, #050a2f 0%, #060d39 100%);
+    color: #d7dcf3;
+    padding: 1.5rem 2rem 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+}
+
+.site-footer-top {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    gap: 1.4rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.site-footer-logo {
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 0.55rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.site-footer-logo-img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+.site-footer-brand p {
+    margin: 0;
+    font-size: 0.86rem;
+    color: #b8c1ea;
+    line-height: 1.6;
+}
+
+.site-footer-links h6 {
+    color: #ffd66f;
+    font-size: 0.74rem;
+    letter-spacing: 0.6px;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+}
+
+.site-footer-links a {
+    display: block;
+    color: #d3daf5;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 0.42rem;
+}
+
+.site-footer-links a:hover {
+    color: #14c7bb;
+}
+
+.site-footer-bottom {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1rem;
+}
+
+.news-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ffd66f;
+    margin-bottom: 0.5rem;
+}
+
+.news-form {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.news-form input {
+    min-width: 220px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f4ff;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.84rem;
+}
+
+.news-form input::placeholder {
+    color: #c5ccef;
+}
+
+.news-form button {
+    border: 0;
+    border-radius: 4px;
+    background: #ffcb57;
+    color: #1f243b;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.site-footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    font-size: 0.78rem;
+    color: #b3bce4;
+}
+
+.site-footer-social {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.site-footer-social a {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #dce2ff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    text-decoration: none;
+}
+
+.site-footer-social a:hover {
+    color: #14c7bb;
+    border-color: #14c7bb;
+}
+
+/* =========================================================
+   FINAL FLIPBOOK STABILITY (keep at end)
+========================================================= */
+body.ebook-view .stf__parent {
+    transform: none !important;
+    transition: none !important;
+}
+
+body.ebook-view .stf__page--left,
+body.ebook-view .stf__page--right {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+body.ebook-view .stf__shadow {
+    display: block !important;
+}
+
+body.ebook-view #flipbook {
+    transition: none !important;
+}
+
+@media (max-width: 991.98px) {
+    .site-footer-top {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .site-footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .site-footer-meta {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.ebook-view .ebook-header-row {
+        padding: 10px 12px 0;
+    }
+
+    .site-footer {
+        padding: 1.2rem 1rem 0.9rem;
+    }
+
+    .site-footer-top {
+        grid-template-columns: 1fr;
+    }
+
+    .news-form {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .news-form input {
+        min-width: 0;
+        width: 100%;
+    }
+}
+
+/* Safety: never render flipbook UI outside ebook viewer page */
+body:not(.ebook-view) #viewer-wrapper,
+body:not(.ebook-view) .viewer-toolbar,
+body:not(.ebook-view) .ebook-side-nav,
+body:not(.ebook-view) #flipbook,
+body:not(.ebook-view) .stf__parent,
+body:not(.ebook-view) .stf__wrapper,
+body:not(.ebook-view) .stf__page {
+    display: none !important;
+}
+
+/* body {
+    background-color: #e0e0e0;   
+} */
+
+/* =========================================================
+   REMOVE BOOTSTRAP WIDTH LIMIT (EBOOK PAGE ONLY)
+========================================================= */
+body.ebook-view .container,
+body.ebook-view .container-fluid {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ======================================= */
+/* UPLOAD / DASHBOARD                      */
+/* ======================================= */
+
+.upload-box {
+    width: 100%;
+    padding: 35px;
+    border: 2px dashed #bfbfbf;
+    background: #f7f5ff;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.upload-box:hover {
+    border-color: #4bdeff;
+    background: #e7f7ff;
+}
+
+.upload-icon {
+    font-size: 50px;
+    margin-bottom: 10px;
+    color: #21a9ff;
+}
+
+.upload-text {
+    font-size: 16px;
+    color: #555;
+}
+
+.upload-subtext {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #555;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.ebook-input {
+    width: 280px;
+    padding: 12px;
+    border: 1px solid #c4c4c4;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.select-btn {
+    padding: 10px 20px;
+    border: none;
+    background: #111212;
+    color: white;
+    border-radius: 8px;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.select-btn:hover {
+    background: #5d5e62;
+}
+
+.upload-btn {
+    background: #000;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.file-list {
+    margin-top: 20px;
+}
+
+#fileItems li {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* ======================================= */
+/* TABLE (DASHBOARD)                       */
+/* ======================================= */
+
+.table-wrapper {
+    margin-top: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1100px;
+}
+
+.table th {
+    background: #f4f6fb;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    padding: 14px 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table td {
+    padding: 14px 10px;
+    font-size: 13px;
+    color: #444;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.actions-col {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .table {
+        font-size: 14px;
+    }
+}
+
+.table tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+.table tr:hover td {
+    background: #eef2ff;
+}
+
+.table .name {
+    font-weight: 600;
+    color: #222;
+}
+
+/* Force horizontal scroll in admin tables (override admin.css) */
+.page-content .table-wrapper {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.page-content .table {
+    min-width: 1100px !important;
+    white-space: nowrap !important;
+}
+
+/* Action buttons override Bootstrap */
+.btn-primary {
+    background: #3b82f6 !important;
+    border: none !important;
+}
+
+.btn-info {
+    background: #1abad4 !important;
+    border: none !important;
+}
+
+.btn-danger {
+    background: #ef4444 !important;
+    border: none !important;
+}
+
+/* =========================================================
+   VIEWER WRAPPER (ONLY ONE VERSION ✅)
+========================================================= */
+#viewer-wrapper {
+    width: 100%;
+    min-height: 100%;
+    display: none;
+    /* shown by JS */
+    justify-content: center;
+    align-items: center;
+
+    background: transparent;
+    /* 🔥 BODY GREY WILL SHOW */
+    padding: 24px 0 20px;
+
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#viewer-wrapper.show {
+    display: flex;
+    opacity: 1;
+}
+
+/* =========================================================
+   PAGES
+========================================================= */
+#flipbook .page {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+#flipbook .page img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #ffffff;
+}
+
+#flipbook .page.cover img {
+    object-fit: cover;
+}
+
+/* =========================================================
+   TOOLBAR
+========================================================= */
+.viewer-toolbar {
+    position: fixed;
+    top: 16px;
+    right: 70px;
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 10000;
+}
+
+.viewer-toolbar button {
+    background: #111;
+    color: #2d2c2c;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.viewer-toolbar button:hover {
+    background: #333;
+}
+
+/* =========================================================
+   SIDE NAV
+========================================================= */
+.ebook-side-nav {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10001;
+}
+
+.side-btn {
+    position: absolute;
+    top: 80%;
+    transform: translateY(-50%);
+    pointer-events: auto;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 50%;
+    /* ✅ PERFECT CIRCLE */
+    background: #1abad4;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    border: none;
+    cursor: pointer;
+
+    display: flex;
+    /* ✅ CENTER IMAGE */
+    align-items: center;
+    justify-content: center;
+
+    transition: background .25s ease, transform .2s ease;
+}
+
+.side-btn.prev {
+    left: 16px;
+}
+
+.side-btn.next {
+    right: 16px;
+}
+
+.side-btn:hover {
+    background: #149bb1;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+}
+
+/* ===============================
+   IMAGE INSIDE BUTTON
+================================ */
+.side-btn img {
+    width: 22px;
+    /* ✅ ICON SIZE */
+    height: 22px;
+    object-fit: contain;
+    opacity: 1;
+    filter: brightness(0) invert(1);
+    pointer-events: none;
+    /* ✅ avoid misclick */
+}
+
+
+/* =========================================================
+   LOADER
+========================================================= */
+#ebookLoader {
+    position: fixed;
+    inset: 0;
+    background: #e0e0e0;
+    /* match body */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+}
+
+/* =========================================================
+   BACK BUTTON
+========================================================= */
+.ebook-back-btn {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    background: #111;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    z-index: 100000;
+}
+
+/* =========================================================
+   MOBILE VIEW
+========================================================= */
+@media (max-width: 900px) {
+
+    #viewer-wrapper {
+        padding: 0;
+        background: #000;
+    }
+
+    #flipbook {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+/* =========================================================
+   FULLSCREEN MODE
+========================================================= */
+.fullscreen-active {
+    position: fixed !important;
+    inset: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: #929090;
+    z-index: 99999;
+}
+
+/* ===============================
+   DEFAULT = CLOSED (page load)
+   =============================== */
+.stf__parent {
+    transform: translateX(0);
+    transition: transform 0.25s ease;
+}
+
+/* ===============================
+   OPEN STATE (spread center)
+   =============================== */
+body.book-open .stf__parent {
+    transform: translateX(0);
+}
+
+/* ===============================
+   DISABLE ANIMATION DURING FLIP
+   =============================== */
+.no-anim .stf__parent {
+    transition: none !important;
+}
+
+/* MOBILE SINGLE PAGE LOOK */
+@media (max-width: 900px) {
+
+    #viewer-wrapper {
+        padding: 0;
+        background: #e0e0e0;
+    }
+
+    #flipbook {
+        width: 100vw;
+        height: 100vh;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+
+    .stf__parent {
+        margin: auto;
+    }
+
+    /* Page image full fit */
+    #flipbook .page img {
+        object-fit: contain;
+        background: #fff;
+    }
+
+    /* Mobile nav buttons */
+    .side-btn {
+        top: auto;
+        bottom: 24px;
+        transform: none;
+        width: 46px;
+        height: 46px;
+        background: #1abad4;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .side-btn.prev {
+        left: 10px;
+    }
+
+    .side-btn.next {
+        right: 10px;
+    }
+
+    .side-btn img {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.fullscreen-active {
+    background: #696868;
+}
+
+.fullscreen-active #viewer-wrapper {
+    width: 100vw;
+    height: 100vh;
+    padding: 48px 0 20px;
+    box-sizing: border-box;
+}
+
+#viewer-wrapper:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    padding: 48px 0 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen-active #flipbook {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ===============================
+   TOOLBAR – RESPONSIVE
+================================ */
+
+.viewer-toolbar {
+    /* position: fixed;
+    top: 16px;
+    right: -36px; */
+
+    /* display: flex;
+    gap: 8px;
+
+    padding: 6px 10px;
+    border-radius: 8px;
+
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+
+    z-index: 10002;
+    transition: all 0.2s ease; */
+}
+
+/* Buttons */
+.viewer-toolbar button {
+    background: #252525;
+    color: #e8e0e0;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Hover */
+.viewer-toolbar button:hover {
+    background: white;
+    color: #272626;
+}
+
+/* Mobile – move toolbar bottom */
+@media (max-width: 900px) {
+    .viewer-toolbar {
+        /* top: auto;
+        bottom: 16px;
+        right: 50%;
+        transform: translateX(50%); */
+    }
+}
+
+/* Fullscreen override */
+.fullscreen-active .viewer-toolbar {
+    top: 16px;
+    right: 16px;
+    bottom: auto;
+    transform: none;
+}
+
+/* table scroll handled in the main table styles above */
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+}
+
+.action-btn i {
+    font-size: 14px;
+}
+
+.action-btn span {
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* ===============================
+   MOBILE TOOLBAR POSITION FIX
+================================ */
+@media (max-width: 768px) {
+
+    .viewer-toolbar {
+        top: 12px;
+        right: 12px;
+        left: auto;
+        /* ❗ important */
+        bottom: auto;
+        /* ❗ important */
+
+        padding: 8px 10px;
+        gap: 6px;
+        border-radius: 12px;
+    }
+
+    .viewer-toolbar button {
+        padding: 6px 8px;
+        font-size: 14px;
+    }
+}
+
+body.ebook-view .page {
+    overflow: hidden;
+    background: #fff;
+}
+
+body.ebook-view .page img,
+body.ebook-view .page canvas {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.ebook-view .page {
+    overflow: hidden;
+}
+
+.stf__wrapper {
+    max-width: 100% !important;
+}
+
+
+/* REMOVE CENTER GAP */
+.stf__block {
+    gap: 0 !important;
+}
+
+.stf__container {
+    gap: 0 !important;
+}
+
+.stf__wrapper {
+    gap: 0 !important;
+}
+
+/* Fix inner page spacing */
+.stf__page {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.page.cover {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.stf__page,
+.stf__shadow,
+.stf__parent {
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* ===== REMOVE CENTER GAP (SPINE FIX) ===== */
+
+.stf__block,
+.stf__container,
+.stf__wrapper {
+    gap: 0 !important;
+}
+
+.stf__page {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force pages to touch */
+.stf__page--left {
+    margin-right: -1px !important;
+}
+
+.stf__page--right {
+    margin-left: -1px !important;
+}
+
+/* Kill shadow spacing */
+.stf__shadow {
+    display: none !important;
+}
+
+/* Pixel nudge */
+.stf__parent {
+    transform: none !important;
+}
+
+.blank-page {
+    background: white;
+}
+
+
+/* Center single pages */
+.stf__wrapper.single {
+    margin: 0 auto !important;
+}
+
+/* Hide dummy pages */
+.page.fake {
+    background: transparent !important;
+    pointer-events: none;
+}
+
+#flipbook {
+    transition: transform 0.25s ease;
+    will-change: transform;
+}
+
+/* =========================================================
+   PAGEFLIP STABILITY OVERRIDES
+   (Fix front-cover open/close glitches)
+========================================================= */
+.stf__page--left,
+.stf__page--right {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.stf__shadow {
+    display: block !important;
+}
+
+.stf__parent {
+    transform: none !important;
+}
+
+/* =========================
+   TOC PANEL - RIGHT TOP
+========================= */
+
+#tocPanel {
+    position: fixed;
+
+    top: 55px;
+    /* toolbar height ku keela */
+    right: -320px;
+    /* hidden */
+
+    width: 280px;
+    height: calc(100% - 70px);
+
+    background: #fff;
+
+    z-index: 100000;
+
+    box-shadow: -3px 0 15px rgba(0, 0, 0, 0.3);
+
+    transition: right 0.3s ease;
+
+    display: flex;
+    flex-direction: column;
+
+    border-radius: 8px 0 0 8px;
+}
+
+/* Show */
+
+#tocPanel.active {
+    right: 0;
+}
+
+.toc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 10px 12px;
+
+    background: #111;
+    color: #fff;
+
+    font-size: 14px;
+}
+
+#tocList {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px;
+    /* next btn safe space */
+}
+
+.viewer-toolbar {
+    z-index: 100001;
+}
+
+/* =========================
+   TOC PANEL - PRO DESIGN
+========================= */
+
+#tocPanel {
+    position: fixed;
+
+    top: 60px;
+    /* below toolbar */
+    right: -320px;
+    /* hidden */
+
+    width: 300px;
+    height: calc(100% - 80px);
+
+    background: #ffffff;
+
+    z-index: 100000;
+
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.25);
+
+    border-radius: 12px 0 0 12px;
+
+    transition: right 0.35s ease;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+/* Show */
+
+#tocPanel.active {
+    right: 0;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.toc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 14px;
+
+    background: linear-gradient(135deg, #111, #333);
+
+    color: #fff;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    letter-spacing: 0.3px;
+}
+
+.toc-header span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.toc-header span::before {
+    content: "📑";
+}
+
+
+/* Close Button */
+
+#closeToc {
+    background: transparent;
+    border: none;
+    color: #fff;
+
+    font-size: 18px;
+    cursor: pointer;
+
+    padding: 2px 6px;
+    border-radius: 6px;
+
+    transition: 0.2s;
+}
+
+#closeToc:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+
+/* =========================
+   LIST
+========================= */
+
+#tocList {
+    flex: 1;
+
+    overflow-y: auto;
+
+    background: #fafafa;
+}
+
+
+/* Scrollbar (Optional) */
+
+#tocList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#tocList::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 10px;
+}
+
+
+/* =========================
+   ITEM
+========================= */
+
+.toc-item {
+    padding: 11px 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    font-size: 14px;
+
+    color: #333;
+
+    cursor: pointer;
+
+    border-bottom: 1px solid #eee;
+
+    transition: 0.2s;
+}
+
+.toc-item::after {
+    content: "›";
+    color: #999;
+}
+
+
+/* Hover */
+
+.toc-item:hover {
+    background: #eaf2ff;
+    color: #1565c0;
+}
+
+
+/* Active Page */
+
+.toc-item.active {
+    background: #1565c0;
+    color: #fff;
+    font-weight: 600;
+}
+
+.toc-item.active::after {
+    color: #fff;
+}
+
+
+/* =====================
+   LOGOUT IMAGE BUTTON
+===================== */
+
+/* LOGOUT BUTTON */
+
+.logout-box {
+    position: relative;
+    z-index: 10;
+}
+
+.logout-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+
+    width: 45px;
+    height: 45px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.3s ease;
+}
+
+.logout-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-btn img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+/* Hover Effect */
+.logout-btn:hover {
+    background: #facc15;
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.6);
+    transform: translateY(-3px) scale(1.1);
+}
+
+.logout-btn:hover img {
+    transform: rotate(12deg);
+}
+
+
+/* Custom Navbar with Warning Top Line (User pages only) */
+
+body.dashboard-page .custom-navbar,
+body.ebook-home .custom-navbar {
+    background: #f3f3f3 !important;
+    /* Always solid */
+
+    position: sticky;
+    top: 0;
+
+    z-index: 1020;
+
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
+    /* Warning line */
+    border-top: 5px solid rgb(245 230 253);
+    /* Yellow warning */
+}
+
+/* Dashboard container fix */
+body.dashboard-page main.container {
+    max-width: 1200px;
+}
+
+/* Viewer full width */
+body.ebook-view main.container {
+    max-width: 100% !important;
+    padding: 0 !important;
+}
+
+.upload-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #f5f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #ccc;
+    border-top: 3px solid #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* toggle mobile sidebar */
+/* ===============================
+   Mobile Sidebar Stable Toggle
+================================ */
+
+/* ===============================
+   MOBILE SIDEBAR
+=============================== */
+
+@media (max-width: 768px) {
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+
+        width: 240px;
+        height: 100vh;
+
+        background: #0b1a33;
+        z-index: 9999;
+
+        transform: translateX(-100%);
+        transition: 0.3s ease;
+
+        overflow-y: auto;
+    }
+
+    /* Show */
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    /* Ensure inner wrapper is visible on mobile */
+    #sidebar .sidebar-wrapper {
+        position: relative;
+        left: 0 !important;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Main content */
+    #main {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .main-content,
+    .page-content,
+    .content-wrapper {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Menu button */
+    .sidebar-toggle {
+        display: inline-block !important;
+        cursor: pointer;
+    }
+}
+
+.hero-section {
+    background: linear-gradient(135deg, #eaf1ff, #f7f9ff);
+    padding: 80px 0;
+}
+
+.hero-title {
+    font-size: 38px;
+    font-weight: 700;
+}
+
+.hero-subtitle {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #6c757d;
+}
+
+.hero-img {
+    max-width: 70%;
+    margin-top: 15px;
+
+}
+
+.ebook-card {
+    border-radius: 15px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: 0.3s ease;
+}
+
+.ebook-card:hover {
+    transform: translateY(-5px);
+}
+
+.ebook-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.ebook-body {
+    padding: 15px;
+}
+
+.ebook-title {
+    font-weight: 600;
+}
+
+
+.nova-navbar {
+    background: #ffffff;
+    padding: 14px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.brand-text {
+    font-weight: 700;
+    font-size: 22px;
+    color: #1abad4;
+}
+
+.navbar-nav .nav-link {
+    color: #555;
+    font-weight: 500;
+    margin: 0 14px;
+    transition: 0.3s;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #1abad4;
+}
+
+.navbar-nav .nav-link.active {
+    border: 2px solid #1abad4;
+    padding: 6px 16px;
+    border-radius: 30px;
+    color: #1abad4;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #444;
+}
+
+.admin-dashboard-btn {
+    background-color: #0ea5c6;
+    border: 1px solid #0ea5c6;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 6px 12px;
+}
+
+.admin-dashboard-btn:hover,
+.admin-dashboard-btn:focus {
+    background-color: #0b89a4;
+    border-color: #0b89a4;
+    color: #ffffff;
+}
+
+.user-menu-toggle {
+    border: 1px solid #cfe8ee;
+    background: #f3fcfe;
+    border-radius: 999px;
+    padding: 6px 14px;
+    color: #1a4f59;
+    font-weight: 600;
+}
+
+.user-menu-toggle:hover,
+.user-menu-toggle:focus {
+    background: #e7f7fb;
+    border-color: #8fd7e6;
+    color: #123b43;
+}
+
+.user-menu-list {
+    border-radius: 12px;
+    border: 1px solid #d9edf2;
+    min-width: 180px;
+    padding: 8px 0;
+}
+
+.user-menu-list .dropdown-item {
+    font-weight: 500;
+    color: #31555d;
+    padding: 8px 14px;
+}
+
+.user-menu-list .dropdown-item:hover,
+.user-menu-list .dropdown-item:focus {
+    background: #e9f8fc;
+    color: #123b43;
+}
+
+/* =========================================================
+   HOME PAGE EBOOK GRID
+========================================================= */
+body.ebook-home #ebooksSection .book-wrapper {
+    position: relative;
+    max-width: 230px;
+    margin: 0 auto;
+    perspective: 1100px;
+}
+
+body.ebook-home #ebooksSection .book {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4.2;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #ffffff;
+    border: 1px solid #d6dbe3;
+    transform: rotateY(-4deg);
+    transform-origin: left center;
+    box-shadow:
+        -8px 0 0 rgba(0, 0, 0, 0.18),
+        -12px 0 10px -7px rgba(0, 0, 0, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+body.ebook-home #ebooksSection .book::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 34%;
+    background: linear-gradient(135deg, rgba(206, 210, 216, 0.5) 0%, rgba(206, 210, 216, 0) 58%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+body.ebook-home #ebooksSection .book::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(270deg, rgba(26, 32, 44, 0.04) 0%, rgba(26, 32, 44, 0.25) 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+body.ebook-home #ebooksSection .book img {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    background: #ffffff;
+    padding: 0;
+}
+
+body.ebook-home #ebooksSection .book-wrapper:hover .book {
+    transform: rotateY(-2deg) translateY(-3px);
+    box-shadow:
+        -10px 0 0 rgba(0, 0, 0, 0.2),
+        -16px 0 12px -8px rgba(0, 0, 0, 0.32);
+    filter: saturate(1.04);
+}
+
+body.ebook-home #ebooksSection .book-actions {
+    position: absolute;
+    inset: 0;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.82);
+    z-index: 5;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+body.ebook-home #ebooksSection .book-wrapper:hover .book-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.ebook-home #ebooksSection .book-wrapper:focus-within .book-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+body.ebook-home #ebooksSection .book-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: min(180px, 85%);
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid #e3e5ea;
+    background: #ececef;
+    color: #1f2937;
+    text-decoration: none;
+    font-size: 15px;
+    line-height: 1;
+    backdrop-filter: blur(2px);
+}
+
+body.ebook-home #ebooksSection .book-action-btn:hover {
+    border-color: #d0d5dd;
+    background: #e1e3e8;
+    color: #111827;
+}
+
+body.ebook-home #ebooksSection .book-info {
+    margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+    body.ebook-home #ebooksSection .book-wrapper {
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 991px) {
+
+    .navbar {
+        padding: 10px 15px;
+    }
+
+    .navbar-brand img {
+        width: 45px;
+    }
+
+    .navbar-toggler {
+        padding: 6px 8px;
+        border: none;
+    }
+
+    .user-menu-toggle {
+        font-size: 14px;
+        padding: 5px 8px;
+    }
+
+    .navbar-collapse {
+        background: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 10px;
+    }
+
+    .navbar-nav .nav-link {
+        padding: 12px 0;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .offcanvas {
+        width: 280px;
+    }
+
+    .offcanvas-header {
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .offcanvas .nav-link {
+        padding: 12px 0;
+        font-size: 16px;
+        font-weight: 500;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .offcanvas .nav-link:hover {
+        color: #0d6efd;
+        padding-left: 5px;
+    }
+}
