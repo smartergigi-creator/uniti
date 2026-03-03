@@ -15,13 +15,6 @@
         </div>
 
         <div class="site-footer-links">
-            <h6>Support & Info</h6>
-            <a href="#">Help Center</a>
-            <a href="#">Contact Us</a>
-            <a href="#">Knowledge Base</a>
-        </div>
-
-        <div class="site-footer-links">
             <h6>Legal</h6>
             <a href="#">Privacy Policy</a>
             <a href="#">Terms of Service</a>

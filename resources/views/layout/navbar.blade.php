@@ -51,7 +51,55 @@
                 $homeUrl = url('/home');
                 $menuCategories = isset($categories)
                     ? $categories
-                    : \App\Models\Category::whereNull('parent_id')->with('children')->orderBy('name')->get();
+                    : \App\Models\Category::whereNull('parent_id')
+                        ->with([
+                            'children' => function ($query) {
+                                $query->orderBy('name')
+                                    ->with([
+                                        'children' => function ($childQuery) {
+                                            $childQuery->orderBy('name');
+                                        },
+                                    ]);
+                            },
+                        ])
+                        ->orderBy('name')
+                        ->get();
+                if ($menuCategories instanceof \Illuminate\Database\Eloquent\Collection) {
+                    $menuCategories->loadMissing([
+                        'children' => function ($query) {
+                            $query->orderBy('name')
+                                ->with([
+                                    'children' => function ($childQuery) {
+                                        $childQuery->orderBy('name');
+                                    },
+                                ]);
+                        },
+                    ]);
+                }
+                $websiteLinks = [
+                    'deals.tourlytours.com',
+                    'blogs.tourlytours.com',
+                    'asi.com.ph',
+                    'my.pesocard.ph',
+                    'ustdi.com.ph',
+                    'my.bisita.com.ph',
+                    'ecapp.uniti.com.ph',
+                    'ikak.net',
+                    'murakami.com.ph',
+                    'autogate.net.ph',
+                    'tourlytours.com',
+                    'store.ikak.net',
+                    'powerboard.com.ph',
+                    'smartertrack.com.ph',
+                    'kainan.ph',
+                    'ocs.com.ph',
+                    'bisita.com.ph',
+                    'pesocard.ph',
+                    'smarter.com.ph',
+                ];
+                $websiteDropdownClass = count($websiteLinks) > 10
+                    ? 'dropdown-menu website-links-menu multi-column-menu'
+                    : 'dropdown-menu website-links-menu';
             @endphp
 
             <!-- Center Menu -->
@@ -61,8 +109,20 @@
                     <a class="nav-link {{ request()->is('home') ? 'active' : '' }}" href="{{ $homeUrl }}">Home</a>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url('/website') }}">Website</a>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        Website
+                    </a>
+                    <ul class="{{ $websiteDropdownClass }}">
+                        @foreach ($websiteLinks as $websiteLink)
+                            <li>
+                                <a class="dropdown-item" href="{{ 'https://' . $websiteLink }}" target="_blank"
+                                    rel="noopener noreferrer">
+                                    {{ $websiteLink }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </li>
 
                 @foreach ($menuCategories as $menuCategory)
@@ -72,14 +132,42 @@
                         </a>
 
                         @if ($menuCategory->children->isNotEmpty())
-                            <ul class="dropdown-menu">
+                            @php
+                                $totalCategoryDropdownLinks = $menuCategory->children->count()
+                                    + $menuCategory->children->sum(function ($childCategory) {
+                                        return $childCategory->children->count();
+                                    });
+                                $categoryDropdownClass = $totalCategoryDropdownLinks > 10
+                                    ? 'dropdown-menu multi-column-menu'
+                                    : 'dropdown-menu';
+                            @endphp
+                            <ul class="{{ $categoryDropdownClass }}">
                                 @foreach ($menuCategory->children as $menuSubcategory)
-                                    <li>
-                                        <a class="dropdown-item"
-                                            href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
-                                            {{ $menuSubcategory->name }}
-                                        </a>
-                                    </li>
+                                    @if ($menuSubcategory->children->isNotEmpty())
+                                        <li class="dropdown-submenu">
+                                            <a class="dropdown-item dropdown-toggle"
+                                                href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
+                                                {{ $menuSubcategory->name }}
+                                            </a>
+                                            <ul class="dropdown-menu">
+                                                @foreach ($menuSubcategory->children as $menuRelatedSubcategory)
+                                                    <li>
+                                                        <a class="dropdown-item related-subcategory-item"
+                                                            href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}&related_subcategory={{ $menuRelatedSubcategory->id }}#ebooksSection">
+                                                            {{ $menuRelatedSubcategory->name }}
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </li>
+                                    @else
+                                        <li>
+                                            <a class="dropdown-item"
+                                                href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
+                                                {{ $menuSubcategory->name }}
+                                            </a>
+                                        </li>
+                                    @endif
                                 @endforeach
                             </ul>
                         @endif
@@ -134,7 +222,55 @@
             $homeUrl = url('/home');
             $menuCategories = isset($categories)
                 ? $categories
-                : \App\Models\Category::whereNull('parent_id')->with('children')->orderBy('name')->get();
+                : \App\Models\Category::whereNull('parent_id')
+                    ->with([
+                        'children' => function ($query) {
+                            $query->orderBy('name')
+                                ->with([
+                                    'children' => function ($childQuery) {
+                                        $childQuery->orderBy('name');
+                                    },
+                                ]);
+                        },
+                    ])
+                    ->orderBy('name')
+                    ->get();
+            if ($menuCategories instanceof \Illuminate\Database\Eloquent\Collection) {
+                $menuCategories->loadMissing([
+                    'children' => function ($query) {
+                        $query->orderBy('name')
+                            ->with([
+                                'children' => function ($childQuery) {
+                                    $childQuery->orderBy('name');
+                                },
+                            ]);
+                    },
+                ]);
+            }
+            $websiteLinks = [
+                'deals.tourlytours.com',
+                'blogs.tourlytours.com',
+                'asi.com.ph',
+                'my.pesocard.ph',
+                'ustdi.com.ph',
+                'my.bisita.com.ph',
+                'ecapp.uniti.com.ph',
+                'ikak.net',
+                'murakami.com.ph',
+                'autogate.net.ph',
+                'tourlytours.com',
+                'store.ikak.net',
+                'powerboard.com.ph',
+                'smartertrack.com.ph',
+                'kainan.ph',
+                'ocs.com.ph',
+                'bisita.com.ph',
+                'pesocard.ph',
+                'smarter.com.ph',
+            ];
+            $websiteDropdownClass = count($websiteLinks) > 10
+                ? 'dropdown-menu website-links-menu multi-column-menu'
+                : 'dropdown-menu website-links-menu';
         @endphp
 
         <ul class="navbar-nav mobile-menu-list">
@@ -143,8 +279,20 @@
                 <a class="nav-link" href="{{ $homeUrl }}">Home</a>
             </li>
 
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url('/website') }}">Website</a>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                    Website
+                </a>
+                <ul class="{{ $websiteDropdownClass }}">
+                    @foreach ($websiteLinks as $websiteLink)
+                        <li>
+                            <a class="dropdown-item" href="{{ 'https://' . $websiteLink }}" target="_blank"
+                                rel="noopener noreferrer">
+                                {{ $websiteLink }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
             </li>
 
             @foreach ($menuCategories as $menuCategory)

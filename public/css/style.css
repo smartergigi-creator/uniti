@@ -1605,6 +1605,68 @@ body.ebook-view main.container {
     color: #123b43;
 }
 
+.multi-column-menu {
+    min-width: 240px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.multi-column-menu li {
+    break-inside: avoid;
+}
+
+.multi-column-menu .dropdown-item:hover,
+.multi-column-menu .dropdown-item:focus {
+    color: #1abad4;
+    background: #e9f8fc;
+}
+
+.multi-column-menu .related-subcategory-item {
+    padding-left: 1.4rem;
+    font-size: 0.92rem;
+}
+
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu>.dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -1px;
+    display: none;
+    min-width: 220px;
+}
+
+.dropdown-submenu:hover>.dropdown-menu,
+.dropdown-submenu:focus-within>.dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu>.dropdown-item.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-submenu>.dropdown-item.dropdown-toggle::after {
+    transform: rotate(-90deg);
+}
+
+@media (min-width: 992px) {
+    .multi-column-menu {
+        min-width: 420px;
+        columns: 2;
+        column-gap: 12px;
+    }
+
+    .website-links-menu {
+        min-width: 620px;
+        columns: 3;
+        column-gap: 12px;
+    }
+}
+
 /* =========================================================
    HOME PAGE EBOOK GRID
 ========================================================= */
