@@ -1987,3 +1987,58 @@ body.ebook-home #ebooksSection .book-info {
         font-size: 14px;
     }
 }
+
+/* ======================================
+   MOBILE PAGINATION ENHANCEMENT
+====================================== */
+@media (max-width: 768px) {
+
+    .pagination {
+        justify-content: center;
+        gap: 6px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .page-item .page-link {
+        padding: 10px 14px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid #dfe3ea;
+        background: #f8f9fb;
+        color: #333;
+        min-width: 44px;
+        /* touch-friendly */
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+
+    /* Hover */
+    .page-item .page-link:hover {
+        background: #1abad4;
+        color: #fff;
+        border-color: #1abad4;
+    }
+
+    /* Active page */
+    .page-item.active .page-link {
+        background: #1abad4;
+        border-color: #1abad4;
+        color: #fff;
+        font-weight: 600;
+    }
+
+    /* Disabled */
+    .page-item.disabled .page-link {
+        background: #f1f1f1;
+        color: #aaa;
+        cursor: not-allowed;
+    }
+
+    /* Previous & Next bigger */
+    .page-item:first-child .page-link,
+    .page-item:last-child .page-link {
+        padding: 10px 16px;
+        font-weight: 500;
+    }
+}

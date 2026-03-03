@@ -1,0 +1,459 @@
+
+(() => {
+
+/* =====================================
+   GLOBAL
+===================================== */
+
+let pageFlip = null;
+let currentMode = null;
+let resizeTimer = null;
+let zoomLevel = 1;
+let isInitialized = false;
+
+let PAGE_RATIO = 700 / 440;
+
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 2.5;
+const ZOOM_STEP = 0.2;
+
+
+/* =====================================
+   DOM READY (ONCE)
+===================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    if (isInitialized) return;
+    isInitialized = true;
+
+    initFileUpload();
+
+    const book = document.getElementById("flipbook");
+
+    if (book) waitForImages();
+
+    setupZoom();
+    setupFullscreen();
+});
+
+
+/* =====================================
+   FILE UPLOAD
+===================================== */
+
+function initFileUpload() {
+
+    const pdf = document.getElementById("pdfInput");
+    const folder = document.getElementById("folderInput");
+
+    if (!pdf && !folder) return;
+
+    function update(files) {
+
+        const list = document.getElementById("fileItems");
+        const count = document.getElementById("fileCount");
+        const wrap = document.getElementById("fileList");
+
+        if (!list) return;
+
+        list.innerHTML = "";
+
+        let c = 0;
+
+        [...files].forEach(f => {
+
+            if (f.type === "application/pdf") {
+
+                c++;
+
+                const li = document.createElement("li");
+                li.textContent = f.name;
+
+                list.appendChild(li);
+            }
+        });
+
+        if (c) {
+            wrap.style.display = "block";
+            count.textContent = c;
+        }
+    }
+
+    pdf?.addEventListener("change", () => update(pdf.files));
+    folder?.addEventListener("change", () => update(folder.files));
+}
+
+
+/* =====================================
+   IMAGE LOAD
+===================================== */
+
+function waitForImages() {
+
+    const book = document.getElementById("flipbook");
+    const imgs = book.querySelectorAll("img");
+
+    let done = 0;
+
+    if (!imgs.length) {
+        init();
+        return;
+    }
+
+    imgs.forEach(img => {
+
+        if (img.complete) {
+
+            done++;
+
+        } else {
+
+            img.onload = img.onerror = () => {
+
+                done++;
+
+                if (done === imgs.length) {
+                    detectRatio();
+                    init();
+                }
+            };
+        }
+    });
+
+    if (done === imgs.length) {
+        detectRatio();
+        init();
+    }
+}
+
+
+/* =====================================
+   RATIO
+===================================== */
+
+function detectRatio() {
+
+    const img = document.querySelector(".page img");
+
+    if (!img) return;
+
+    if (img.naturalWidth && img.naturalHeight) {
+        PAGE_RATIO = img.naturalHeight / img.naturalWidth;
+    }
+}
+
+
+/* =====================================
+   INIT
+===================================== */
+
+function init() {
+
+    if (pageFlip) return;
+
+    applyMode(true);
+
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onRotate);
+
+    hideLoader();
+}
+
+
+/* =====================================
+   RESIZE / ROTATE
+===================================== */
+
+function onResize() {
+
+    clearTimeout(resizeTimer);
+
+    resizeTimer = setTimeout(() => {
+
+        if (pageFlip) updateSize();
+
+    }, 250);
+}
+
+
+function onRotate() {
+
+    clearTimeout(resizeTimer);
+
+    resizeTimer = setTimeout(() => {
+
+        if (!pageFlip) return;
+
+        destroy();
+        initFlipbook(currentMode || "double");
+
+    }, 700);
+}
+
+
+/* =====================================
+   MODE
+===================================== */
+
+function applyMode(first) {
+
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    const mobile = w <= 900;
+    const land = w > h;
+
+    let mode = (mobile && !land) ? "single" : "double";
+
+    if (currentMode === mode && !first) {
+        updateSize();
+        return;
+    }
+
+    currentMode = mode;
+
+    destroy();
+    initFlipbook(mode);
+}
+
+
+/* =====================================
+   SIZE
+===================================== */
+
+function calculateSize() {
+
+    const vw = window.visualViewport
+        ? window.visualViewport.width
+        : window.innerWidth;
+
+    const vh = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight;
+
+    const r = PAGE_RATIO;
+
+    const mobile = vw <= 900;
+    const land = vw > vh;
+
+    let w, h;
+
+
+    if (mobile && land) {
+
+        w = Math.min(vw / 2, vh / r);
+
+    } else if (mobile) {
+
+        w = Math.min(vw, vh / r);
+
+    } else {
+
+        w = Math.min(vw / 2, vh / r);
+    }
+
+    h = w * r;
+
+
+    return {
+        width: Math.floor(w),
+        height: Math.floor(h)
+    };
+}
+
+
+function updateSize() {
+
+    if (!pageFlip) return;
+
+    pageFlip.update(calculateSize());
+}
+
+
+/* =====================================
+   DESTROY
+===================================== */
+
+function destroy() {
+
+    if (pageFlip) {
+        pageFlip.destroy();
+        pageFlip = null;
+    }
+}
+
+
+/* =====================================
+   INIT FLIPBOOK (COVER SAFE)
+===================================== */
+
+function initFlipbook(mode) {
+
+    const book = document.getElementById("flipbook");
+
+    if (!book) return;
+
+
+    /* ===== FAKE PAGE FIX ===== */
+
+    let pages = book.querySelectorAll(".page");
+
+    if (!pages[0].classList.contains("fake")) {
+
+        const fake = document.createElement("div");
+        fake.className = "page fake";
+
+        book.insertBefore(fake, pages[0]);
+    }
+
+    pages = book.querySelectorAll(".page");
+
+    if (pages.length % 2 !== 0) {
+
+        const fake = document.createElement("div");
+        fake.className = "page fake";
+
+        book.appendChild(fake);
+    }
+
+
+    const size = calculateSize();
+
+
+    pageFlip = new St.PageFlip(book, {
+
+        width: size.width,
+        height: size.height,
+
+        size: "stretch",
+
+        showCover: false,
+
+        maxShadowOpacity: 0.1,
+        mobileScrollSupport: true,
+
+        flippingTime: 650
+    });
+
+
+    pageFlip.loadFromHTML(book.querySelectorAll(".page"));
+
+
+    setTimeout(() => {
+        pageFlip.turnToPage(1); // real cover
+    }, 250);
+
+
+    pageFlip.on("flip", updateNav);
+
+    setupNav();
+    updateNav();
+}
+
+
+/* =====================================
+   NAV
+===================================== */
+
+function setupNav() {
+
+    const prev = document.getElementById("prevPage");
+    const next = document.getElementById("nextPage");
+
+    if (prev)
+        prev.onclick = e => {
+            e.preventDefault();
+            pageFlip.flipPrev();
+        };
+
+    if (next)
+        next.onclick = e => {
+            e.preventDefault();
+            pageFlip.flipNext();
+        };
+}
+
+
+function updateNav() {
+
+    if (!pageFlip) return;
+
+    const i = pageFlip.getCurrentPageIndex();
+    const t = pageFlip.getPageCount() - 1;
+
+    const prev = document.getElementById("prevPage");
+    const next = document.getElementById("nextPage");
+
+    if (prev) prev.style.display = i <= 1 ? "none" : "flex";
+    if (next) next.style.display = i >= t ? "none" : "flex";
+}
+
+
+/* =====================================
+   LOADER
+===================================== */
+
+function hideLoader() {
+
+    const l = document.getElementById("ebookLoader");
+    const v = document.getElementById("viewer-wrapper");
+
+    if (l) l.remove();
+    if (v) v.classList.add("show");
+}
+
+
+/* =====================================
+   ZOOM
+===================================== */
+
+function setupZoom() {
+
+    const zi = document.getElementById("zoomIn");
+    const zo = document.getElementById("zoomOut");
+    const zr = document.getElementById("zoomReset");
+
+    if (zi) zi.onclick = () => zoom(zoomLevel + ZOOM_STEP);
+    if (zo) zo.onclick = () => zoom(zoomLevel - ZOOM_STEP);
+    if (zr) zr.onclick = () => zoom(1);
+}
+
+
+function zoom(v) {
+
+    zoomLevel = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, v));
+
+    const w = document.querySelector(".stf__wrapper");
+
+    if (!w) return;
+
+    w.style.transform = `scale(${zoomLevel})`;
+    w.style.transformOrigin = "center center";
+}
+
+
+/* =====================================
+   FULLSCREEN
+===================================== */
+
+function setupFullscreen() {
+
+    const b = document.getElementById("fullscreenToggle");
+    const v = document.getElementById("viewer-wrapper");
+
+    if (!b || !v) return;
+
+    b.onclick = () => {
+
+        if (!document.fullscreenElement) {
+            v.requestFullscreen();
+        } else {
+            document.exitFullscreen();
+        }
+    };
+}
+
+
+})();
+
