@@ -1,4 +1,4 @@
-﻿<meta charset="UTF-8">
+<meta charset="UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -16,10 +16,15 @@
 <link rel="stylesheet" href="{{ asset('admin/dist/assets/vendors/bootstrap-icons/bootstrap-icons.css') }}">
 <link rel="stylesheet" href="{{ asset('admin/dist/assets/css/app.css') }}">
 
-<link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+@php
+    $faviconVer = file_exists(public_path('favicon.ico')) ? filemtime(public_path('favicon.ico')) : time();
+@endphp
+<link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}?v={{ $faviconVer }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}?v={{ $faviconVer }}">
+<link rel="icon" type="image/png" sizes="200x200" href="{{ asset('favicon-200x200.png') }}?v={{ $faviconVer }}">
+<link rel="icon" href="{{ asset('favicon.ico') }}?v={{ $faviconVer }}" sizes="any">
+<link rel="shortcut icon" href="{{ asset('favicon.ico') }}?v={{ $faviconVer }}">
+<link rel="apple-touch-icon" href="{{ asset('favicon.png') }}?v={{ $faviconVer }}" sizes="200x200">
 
 <link rel="stylesheet" href="{{ asset('css/admin.css') }}">
 <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-
-
-

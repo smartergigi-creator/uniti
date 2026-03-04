@@ -112,7 +112,29 @@ class HomeController extends Controller
         }
 
         if ($selectedCategoryId) {
-            $query->where('category_id', $selectedCategoryId);
+            if ($selectedSubcategoryId) {
+                $query->where('category_id', $selectedCategoryId);
+            } else {
+                $subcategoryIds = Category::where('parent_id', $selectedCategoryId)
+                    ->pluck('id')
+                    ->all();
+
+                $relatedSubcategoryIds = empty($subcategoryIds)
+                    ? []
+                    : Category::whereIn('parent_id', $subcategoryIds)->pluck('id')->all();
+
+                $query->where(function ($categoryQuery) use ($selectedCategoryId, $subcategoryIds, $relatedSubcategoryIds) {
+                    $categoryQuery->where('category_id', $selectedCategoryId);
+
+                    if (!empty($subcategoryIds)) {
+                        $categoryQuery->orWhereIn('subcategory_id', $subcategoryIds);
+                    }
+
+                    if (!empty($relatedSubcategoryIds)) {
+                        $categoryQuery->orWhereIn('related_subcategory_id', $relatedSubcategoryIds);
+                    }
+                });
+            }
         }
 
         if ($selectedSubcategoryId) {
@@ -123,7 +145,7 @@ class HomeController extends Controller
             $query->where('related_subcategory_id', $selectedRelatedSubcategoryId);
         }
 
-        $ebooks = $query->latest()->paginate(10);
+        $ebooks = $query->latest()->paginate(25);
         $categories = Category::whereNull('parent_id')
             ->with([
                 'children' => function ($query) {

@@ -1654,6 +1654,17 @@ body.ebook-view main.container {
 }
 
 @media (min-width: 992px) {
+    .nova-navbar .navbar-nav>.nav-item.dropdown:hover>.dropdown-menu,
+    .nova-navbar .navbar-nav>.nav-item.dropdown:focus-within>.dropdown-menu {
+        display: block;
+    }
+
+    .nova-navbar .navbar-nav>.nav-item.dropdown>.dropdown-menu {
+        margin-top: 0;
+    }
+}
+
+@media (min-width: 992px) {
     .multi-column-menu {
         min-width: 420px;
         columns: 2;

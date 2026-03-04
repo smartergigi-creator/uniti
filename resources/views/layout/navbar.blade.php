@@ -77,7 +77,6 @@
                     ]);
                 }
                 $websiteLinks = [
-                    'deals.tourlytours.com',
                     'blogs.tourlytours.com',
                     'asi.com.ph',
                     'my.pesocard.ph',
@@ -87,14 +86,11 @@
                     'ikak.net',
                     'murakami.com.ph',
                     'autogate.net.ph',
-                    'tourlytours.com',
-                    'store.ikak.net',
                     'powerboard.com.ph',
                     'smartertrack.com.ph',
                     'kainan.ph',
                     'ocs.com.ph',
                     'bisita.com.ph',
-                    'pesocard.ph',
                     'smarter.com.ph',
                 ];
                 $websiteDropdownClass = count($websiteLinks) > 10
@@ -142,6 +138,12 @@
                                     : 'dropdown-menu';
                             @endphp
                             <ul class="{{ $categoryDropdownClass }}">
+                                <li>
+                                    <a class="dropdown-item"
+                                        href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
+                                        All {{ $menuCategory->name }}
+                                    </a>
+                                </li>
                                 @foreach ($menuCategory->children as $menuSubcategory)
                                     @if ($menuSubcategory->children->isNotEmpty())
                                         <li class="dropdown-submenu">
@@ -248,7 +250,6 @@
                 ]);
             }
             $websiteLinks = [
-                'deals.tourlytours.com',
                 'blogs.tourlytours.com',
                 'asi.com.ph',
                 'my.pesocard.ph',
@@ -258,14 +259,11 @@
                 'ikak.net',
                 'murakami.com.ph',
                 'autogate.net.ph',
-                'tourlytours.com',
-                'store.ikak.net',
                 'powerboard.com.ph',
                 'smartertrack.com.ph',
                 'kainan.ph',
                 'ocs.com.ph',
                 'bisita.com.ph',
-                'pesocard.ph',
                 'smarter.com.ph',
             ];
             $websiteDropdownClass = count($websiteLinks) > 10
