@@ -61,6 +61,12 @@
                                                     placeholder="Enter eBook name" required>
                                             </div>
 
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Author Name</label>
+                                                <input type="text" name="author_name" class="form-control"
+                                                    placeholder="Enter author name" required>
+                                            </div>
+
                                             <div class="mb-3" id="uploadCategoryField">
                                                 <label class="form-label fw-semibold">Category</label>
                                                 <select name="category_id" id="uploadCategorySelect" class="form-select"
@@ -167,7 +173,7 @@
                 </div>
 
                 <div class="col-md-12 col-lg-2">
-                    <a href="{{ url('/home') }}" class="btn btn-outline-secondary w-100" id="clearFilterBtn">
+                    <a href="{{ url('/home#ebooksSection') }}" class="btn btn-outline-secondary w-100" id="clearFilterBtn">
                         Clear Filter
                     </a>
                 </div>
@@ -209,6 +215,9 @@
 
                             <div class="book-info">
                                 <h6>{{ $book->title }}</h6>
+                                @if (filled($book->author_name))
+                                    <small class="d-block">Author: {{ $book->author_name }}</small>
+                                @endif
                                 <small>{{ $book->created_at?->format('d M Y') }}</small>
                             </div>
                         </div>
@@ -299,6 +308,69 @@
             } else {
                 coverImages.forEach((imgEl) => renderCover(imgEl));
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterForm = document.getElementById('ebookFilterForm');
+            if (!filterForm) return;
+
+            const searchInput = filterForm.querySelector('input[name="search"]');
+            const categoryFilter = filterForm.querySelector('#categorySelect');
+            const subCategoryFilter = filterForm.querySelector('#subCategorySelect');
+            const relatedSubCategoryFilter = filterForm.querySelector('#relatedSubCategorySelect');
+            const ebooksSection = document.getElementById('ebooksSection');
+            let searchDebounceTimer = null;
+            const filterResultFlag = 'ebook_home_filter_to_results';
+            const queryParams = new URLSearchParams(window.location.search);
+            const hasFilterQuery = ['search', 'category', 'subcategory', 'related_subcategory', 'page']
+                .some((key) => {
+                    const value = queryParams.get(key);
+                    return value !== null && value !== '';
+                });
+
+            if (ebooksSection && (sessionStorage.getItem(filterResultFlag) === '1' || hasFilterQuery)) {
+                window.requestAnimationFrame(() => {
+                    ebooksSection.scrollIntoView({
+                        block: 'start'
+                    });
+                });
+                sessionStorage.removeItem(filterResultFlag);
+            }
+
+            const setFilterResultFlag = () => {
+                sessionStorage.setItem(filterResultFlag, '1');
+            };
+
+            const submitFilterForm = () => {
+                if (searchDebounceTimer) {
+                    clearTimeout(searchDebounceTimer);
+                    searchDebounceTimer = null;
+                }
+                setFilterResultFlag();
+                filterForm.submit();
+            };
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    if (searchDebounceTimer) {
+                        clearTimeout(searchDebounceTimer);
+                    }
+                    searchDebounceTimer = setTimeout(() => {
+                        setFilterResultFlag();
+                        filterForm.submit();
+                    }, 500);
+                });
+            }
+
+            filterForm.addEventListener('submit', function() {
+                setFilterResultFlag();
+            });
+
+            [categoryFilter, subCategoryFilter, relatedSubCategoryFilter]
+                .filter(Boolean)
+                .forEach((element) => {
+                    element.addEventListener('change', submitFilterForm);
+                });
         });
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -475,3 +547,4 @@
     </script>
 
 @endsection
+

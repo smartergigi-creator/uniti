@@ -22,53 +22,70 @@ class CategorySeeder extends Seeder
             ]
         );
 
-        $departmentEbooks = Category::firstOrCreate(
-            ['slug' => 'department-e-books'],
-            [
-                'name' => 'Department e-Books',
-                'image' => null,
-                'parent_id' => $companyEbooks->id,
-            ]
-        );
+        $companyChildren = ['Company Profile', 'Department e-Books', 'SOP', 'Stationary', 'Flyers', 'Calendar'];
+        $companyChildMap = [];
 
-        foreach (['Manual', 'Handmade'] as $name) {
-            Category::firstOrCreate(
-                ['slug' => Str::slug('department-e-books-' . $name)],
+        foreach ($companyChildren as $name) {
+            $category = Category::firstOrCreate(
                 [
                     'name' => $name,
+                    'parent_id' => $companyEbooks->id,
+                ],
+                [
+                    'slug' => Str::slug($name),
                     'image' => null,
+                ]
+            );
+
+            $companyChildMap[$name] = $category;
+        }
+
+        $departmentEbooks = $companyChildMap['Department e-Books'];
+        $companyProfile = $companyChildMap['Company Profile'];
+
+        $companyProfileSubPages = [
+            'ASI',
+            'USTDI Company Profile',
+        ];
+
+        foreach ($companyProfileSubPages as $name) {
+            Category::firstOrCreate(
+                [
+                    'name' => $name,
+                    'parent_id' => $companyProfile->id,
+                ],
+                [
+                    'slug' => Str::slug('company-profile-' . $name),
+                    'image' => null,
+                ]
+            );
+        }
+
+        $departmentSubPages = [
+            'Accounting',
+            'General Support',
+            'HRM',
+            'Logistics',
+            'Marketing',
+            'MIS - Managed Information System',
+            'Purchasing and Distribution',
+            'Sales',
+            'Special Project',
+            'Technical',
+        ];
+
+        foreach ($departmentSubPages as $name) {
+            Category::firstOrCreate(
+                [
+                    'name' => $name,
                     'parent_id' => $departmentEbooks->id,
-                ]
-            );
-        }
-
-        $department = Category::firstOrCreate(
-            ['slug' => 'department'],
-            [
-                'name' => 'Department',
-                'image' => null,
-                'parent_id' => null,
-            ]
-        );
-
-        $ebooks = Category::firstOrCreate(
-            ['slug' => 'ebooks'],
-            [
-                'name' => 'Ebooks',
-                'image' => null,
-                'parent_id' => null,
-            ]
-        );
-
-        foreach (['Manual', 'Handmade'] as $name) {
-            Category::firstOrCreate(
-                ['slug' => Str::slug($name)],
+                ],
                 [
-                    'name' => $name,
+                    'slug' => Str::slug('department-e-books-' . $name),
                     'image' => null,
-                    'parent_id' => $ebooks->id,
                 ]
             );
         }
+
     }
 }

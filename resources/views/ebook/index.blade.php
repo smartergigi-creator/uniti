@@ -69,6 +69,13 @@
                                             placeholder="Enter Ebook Name" required>
                                     </div>
 
+                                    <!-- Author Name -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold">Author Name</label>
+                                        <input type="text" name="author_name" class="form-control custom-input"
+                                            placeholder="Enter Author Name" required>
+                                    </div>
+
                                     <!-- Category (Parent Only) -->
                                     <div class="col-md-3" id="categoryField"
                                         style="{{ $categories->count() > 0 ? '' : 'display:none;' }}">
@@ -338,4 +345,5 @@
         </div>
     </div>
 </div>
+
 

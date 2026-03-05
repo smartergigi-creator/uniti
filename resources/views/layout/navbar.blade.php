@@ -129,15 +129,14 @@
 
                         @if ($menuCategory->children->isNotEmpty())
                             @php
-                                $totalCategoryDropdownLinks = $menuCategory->children->count()
-                                    + $menuCategory->children->sum(function ($childCategory) {
-                                        return $childCategory->children->count();
-                                    });
-                                $categoryDropdownClass = $totalCategoryDropdownLinks > 10
-                                    ? 'dropdown-menu multi-column-menu'
-                                    : 'dropdown-menu';
+                                $hasGrandChildren = $menuCategory->children->contains(function ($childCategory) {
+                                    return $childCategory->children->isNotEmpty();
+                                });
+                                $categoryMenuClass = !$hasGrandChildren && $menuCategory->children->count() > 10
+                                    ? 'dropdown-menu category-dropdown-menu category-dropdown-columns'
+                                    : 'dropdown-menu category-dropdown-menu';
                             @endphp
-                            <ul class="{{ $categoryDropdownClass }}">
+                            <ul class="{{ $categoryMenuClass }}">
                                 <li>
                                     <a class="dropdown-item"
                                         href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
@@ -151,7 +150,12 @@
                                                 href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
                                                 {{ $menuSubcategory->name }}
                                             </a>
-                                            <ul class="dropdown-menu">
+                                            @php
+                                                $subcategoryMenuClass = $menuSubcategory->children->count() > 8
+                                                    ? 'dropdown-menu category-submenu-menu category-submenu-columns'
+                                                    : 'dropdown-menu category-submenu-menu';
+                                            @endphp
+                                            <ul class="{{ $subcategoryMenuClass }}">
                                                 @foreach ($menuSubcategory->children as $menuRelatedSubcategory)
                                                     <li>
                                                         <a class="dropdown-item related-subcategory-item"

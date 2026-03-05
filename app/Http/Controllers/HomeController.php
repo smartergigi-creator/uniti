@@ -145,7 +145,7 @@ class HomeController extends Controller
             $query->where('related_subcategory_id', $selectedRelatedSubcategoryId);
         }
 
-        $ebooks = $query->latest()->paginate(25);
+        $ebooks = $query->latest()->paginate(32);
         $categories = Category::whereNull('parent_id')
             ->with([
                 'children' => function ($query) {

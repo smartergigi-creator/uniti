@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Category extends Model
 {
@@ -10,8 +11,20 @@ class Category extends Model
         'name',
         'slug',
         'image',
-        'parent_id'
+        'parent_id',
+        'is_deleted'
     ];
+
+    protected static function booted()
+    {
+        if (!Schema::hasColumn('categories', 'is_deleted')) {
+            return;
+        }
+
+        static::addGlobalScope('not_deleted', function ($query) {
+            $query->where('is_deleted', 0);
+        });
+    }
 
     // Parent category
     public function parent()

@@ -129,6 +129,10 @@ Route::middleware(['auth','admin'])->group(function () {
 
     Route::get('/admin/ebooks', [AdminController::class, 'ebooks'])
         ->name('admin.ebooks');
+    Route::get('/admin/ebooks/{id}/edit', [AdminController::class, 'editEbook'])
+        ->name('admin.ebooks.edit');
+    Route::put('/admin/ebooks/{id}', [AdminController::class, 'updateEbook'])
+        ->name('admin.ebooks.update');
 
     Route::get('/admin/today-uploads', [AdminController::class, 'todayUploads'])
         ->name('admin.todayUploads');

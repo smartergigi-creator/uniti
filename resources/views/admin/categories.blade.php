@@ -36,21 +36,18 @@
                             <table class="table align-middle category-table">
                                 <thead>
                                     <tr>
+                                        <th class="text-center sticky-action-col">Actions</th>
                                         <th>ID</th>
                                         <th>Category Name</th>
                                         <th>Parent Category</th>
-                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($categories as $category)
                                         <tr>
-                                            <td class="fw-semibold">{{ $category->id }}</td>
-                                            <td>{{ $category->name }}</td>
-                                            <td>{{ $category->parent?->name ?? '-' }}</td>
-                                            <td>
+                                            <td class="sticky-action-col">
                                                 <div class="d-flex justify-content-center gap-2">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary edit-category-btn"
+                                                    <button type="button" class="btn btn-sm action-btn action-btn-edit edit-category-btn"
                                                         title="Edit" data-bs-toggle="modal" data-bs-target="#editCategoryModal"
                                                         data-category-id="{{ $category->id }}"
                                                         data-category-name="{{ $category->name }}"
@@ -63,13 +60,16 @@
                                                         onsubmit="return confirm('Delete this category? Child categories may also be removed.');">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                        <button type="submit" class="btn btn-sm action-btn action-btn-delete"
                                                             title="Delete">
                                                             <i class="bi bi-trash"></i>
                                                         </button>
                                                     </form>
                                                 </div>
                                             </td>
+                                            <td class="fw-semibold">{{ $category->id }}</td>
+                                            <td>{{ $category->name }}</td>
+                                            <td>{{ $category->parent?->name ?? '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -234,6 +234,80 @@
         </div>
     </div>
 @endsection
+
+<style>
+    .admin-category-page .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    .admin-category-page .category-table {
+        min-width: 760px;
+    }
+
+    .admin-category-page .category-table .sticky-action-col {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        min-width: 140px;
+        background: #f4fbff;
+        box-shadow: 2px 0 0 rgba(215, 230, 238, 0.95);
+    }
+
+    .admin-category-page .category-table thead .sticky-action-col {
+        z-index: 5;
+        color: #0c4a6e !important;
+        background: linear-gradient(180deg, #dcf4ff 0%, #cdeefe 100%) !important;
+    }
+
+    .admin-category-page .category-table tbody tr:nth-child(even) .sticky-action-col {
+        background: #eefdff;
+    }
+
+    .admin-category-page .category-table tbody tr:hover .sticky-action-col {
+        background: #def3ff !important;
+    }
+
+    .admin-category-page .category-table .action-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border-width: 1px;
+    }
+
+    .admin-category-page .category-table .action-btn i {
+        font-size: 14px;
+    }
+
+    .admin-category-page .category-table .action-btn-edit {
+        color: #0ea5a7;
+        border-color: #1bcfd4;
+        background: #ecfdff;
+    }
+
+    .admin-category-page .category-table .action-btn-edit:hover {
+        color: #ffffff;
+        border-color: #0ea5a7;
+        background: #0ea5a7;
+    }
+
+    .admin-category-page .category-table .action-btn-delete {
+        color: #e66b75;
+        border-color: #f29ba2;
+        background: #fff5f6;
+    }
+
+    .admin-category-page .category-table .action-btn-delete:hover {
+        color: #ffffff;
+        border-color: #de7275;
+        background: #de7275;
+    }
+</style>
 
 @push('scripts')
     <script>

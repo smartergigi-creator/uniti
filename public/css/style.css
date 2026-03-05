@@ -1621,6 +1621,15 @@ body.ebook-view main.container {
     background: #e9f8fc;
 }
 
+/* Uniform hover style for all navbar dropdown menus */
+.nova-navbar .dropdown-menu .dropdown-item:hover,
+.nova-navbar .dropdown-menu .dropdown-item:focus,
+.nova-navbar .dropdown-menu .dropdown-item.active,
+.nova-navbar .dropdown-menu .dropdown-item:active {
+    background: #d9f3fb !important;
+    color: #0aa6c1 !important;
+}
+
 .multi-column-menu .related-subcategory-item {
     padding-left: 1.4rem;
     font-size: 0.92rem;
@@ -1653,6 +1662,50 @@ body.ebook-view main.container {
     transform: rotate(-90deg);
 }
 
+/* Category menu: keep single-column tree layout (no horizontal scroll) */
+.category-dropdown-menu {
+    min-width: 280px;
+    overflow: visible;
+}
+
+.category-dropdown-menu .dropdown-item {
+    white-space: normal;
+    line-height: 1.35;
+}
+
+.category-dropdown-columns {
+    min-width: 520px;
+    columns: 2;
+    column-gap: 12px;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+.category-dropdown-columns li {
+    break-inside: avoid;
+}
+
+.category-submenu-menu {
+    min-width: 340px;
+    overflow: visible;
+}
+
+.category-submenu-columns {
+    min-width: 560px;
+    columns: 2;
+    column-gap: 12px;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+}
+
+.category-submenu-columns li {
+    break-inside: avoid;
+}
+
+.category-submenu-columns .dropdown-item {
+    white-space: normal;
+}
+
 @media (min-width: 992px) {
     .nova-navbar .navbar-nav>.nav-item.dropdown:hover>.dropdown-menu,
     .nova-navbar .navbar-nav>.nav-item.dropdown:focus-within>.dropdown-menu {
@@ -1661,6 +1714,10 @@ body.ebook-view main.container {
 
     .nova-navbar .navbar-nav>.nav-item.dropdown>.dropdown-menu {
         margin-top: 0;
+    }
+
+    .category-dropdown-menu .dropdown-submenu>.dropdown-menu {
+        left: calc(100% - 6px);
     }
 }
 

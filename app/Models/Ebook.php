@@ -9,8 +9,9 @@ class Ebook extends Model
     // ✅ Correct table name
     protected $table = 'ebook';
 
-   protected $fillable = [
-'title',
+    protected $fillable = [
+        'title',
+        'author_name',
         'file_title',
         'pdf_path',
         'folder_path',
@@ -27,7 +28,7 @@ class Ebook extends Model
         'max_views',
         'current_views',
         'slug',
-];
+    ];
 
 
     public function pages()
@@ -71,3 +72,4 @@ class Ebook extends Model
         return $this->belongsTo(Category::class, 'related_subcategory_id');
     }
 }
+

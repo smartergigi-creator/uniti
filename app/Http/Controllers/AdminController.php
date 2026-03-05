@@ -10,6 +10,7 @@ use App\Models\Category;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 class AdminController extends Controller
 {
  
@@ -167,6 +168,93 @@ public function ebooks()
         ->paginate(10);
 
     return view('admin.ebooks', compact('ebooks'));
+}
+
+public function editEbook($id)
+{
+    $ebook = Ebook::with(['category', 'subcategory', 'relatedSubcategory'])->findOrFail($id);
+
+    $categories = Category::whereNull('parent_id')
+        ->orderBy('name')
+        ->get(['id', 'name']);
+
+    $subcategories = Category::whereNotNull('parent_id')
+        ->orderBy('name')
+        ->get(['id', 'name', 'parent_id']);
+
+    return view('admin.ebook-edit', compact('ebook', 'categories', 'subcategories'));
+}
+
+public function updateEbook(Request $request, $id)
+{
+    $ebook = Ebook::findOrFail($id);
+
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'author_name' => 'required|string|max:255',
+        'file_title' => 'required|string|max:255',
+        'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+        'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+        'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+    ]);
+
+    $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+    $subcategoryId = isset($validated['subcategory_id']) ? (int) $validated['subcategory_id'] : null;
+    $relatedSubcategoryId = isset($validated['related_subcategory_id']) ? (int) $validated['related_subcategory_id'] : null;
+
+    $categoryId = $categoryId > 0 ? $categoryId : null;
+    $subcategoryId = $subcategoryId > 0 ? $subcategoryId : null;
+    $relatedSubcategoryId = $relatedSubcategoryId > 0 ? $relatedSubcategoryId : null;
+
+    if ($categoryId !== null && !Category::find($categoryId)) {
+        return back()->withErrors([
+            'category_id' => 'Invalid category selected.'
+        ])->withInput();
+    }
+
+    if ($subcategoryId !== null) {
+        $subcategory = Category::find($subcategoryId);
+        if (!$subcategory || $subcategory->parent_id === null) {
+            return back()->withErrors([
+                'subcategory_id' => 'Invalid subcategory selected.'
+            ])->withInput();
+        }
+
+        if ($categoryId === null || (int) $subcategory->parent_id !== $categoryId) {
+            return back()->withErrors([
+                'subcategory_id' => 'Selected subcategory does not belong to selected category.'
+            ])->withInput();
+        }
+    } else {
+        $relatedSubcategoryId = null;
+    }
+
+    if ($relatedSubcategoryId !== null) {
+        $relatedSubcategory = Category::find($relatedSubcategoryId);
+        if (!$relatedSubcategory || $relatedSubcategory->parent_id === null) {
+            return back()->withErrors([
+                'related_subcategory_id' => 'Invalid related subcategory selected.'
+            ])->withInput();
+        }
+
+        if ($subcategoryId === null || (int) $relatedSubcategory->parent_id !== $subcategoryId) {
+            return back()->withErrors([
+                'related_subcategory_id' => 'Selected related subcategory does not belong to selected subcategory.'
+            ])->withInput();
+        }
+    }
+
+    $ebook->title = trim($validated['title']);
+    $ebook->author_name = trim($validated['author_name']);
+    $ebook->file_title = trim($validated['file_title']);
+    $ebook->category_id = $categoryId;
+    $ebook->subcategory_id = $subcategoryId;
+    $ebook->related_subcategory_id = $relatedSubcategoryId;
+    $ebook->save();
+
+    return redirect()
+        ->route('admin.ebooks')
+        ->with('success', 'Ebook updated successfully.');
 }
 
 public function todayUploads()
