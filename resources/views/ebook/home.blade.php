@@ -67,6 +67,9 @@
                                                     placeholder="Enter author name" required>
                                             </div>
 
+                                            <input type="hidden" name="year"
+                                                value="{{ (int) (request('year') ?: now()->year) }}">
+
                                             <div class="mb-3" id="uploadCategoryField">
                                                 <label class="form-label fw-semibold">Category</label>
                                                 <select name="category_id" id="uploadCategorySelect" class="form-select"
@@ -140,6 +143,17 @@
                     </select>
                 </div>
 
+                <div class="col-md-2">
+                    <select class="form-control" name="year" id="yearSelect">
+                        <option value="">All Years</option>
+                        @foreach ($availableYears as $year)
+                            <option value="{{ $year }}" @selected((int) ($selectedYear ?? 0) === (int) $year)>
+                                {{ $year }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="col-md-3" id="subCategoryField"
                     style="{{ $subcategories->isNotEmpty() || $selectedSubcategoryId ? '' : 'display:none;' }}">
                     <select class="form-control" name="subcategory" id="subCategorySelect"
@@ -190,7 +204,6 @@
                         $pdfUrl = asset(ltrim(str_replace('\\', '/', $book->pdf_path), '/'));
                     @endphp
                     <div class="col-lg-3 col-md-4 col-sm-6 mb-5 text-center">
-                        {{-- <p>{{ $book->pdf_path }}</p> --}}
                         <div class="book-wrapper">
                             <div class="book">
                                 <img src="{{ asset('images/homecover.png') }}" data-pdf-cover="1"
@@ -316,13 +329,14 @@
 
             const searchInput = filterForm.querySelector('input[name="search"]');
             const categoryFilter = filterForm.querySelector('#categorySelect');
+            const yearFilter = filterForm.querySelector('#yearSelect');
             const subCategoryFilter = filterForm.querySelector('#subCategorySelect');
             const relatedSubCategoryFilter = filterForm.querySelector('#relatedSubCategorySelect');
             const ebooksSection = document.getElementById('ebooksSection');
             let searchDebounceTimer = null;
             const filterResultFlag = 'ebook_home_filter_to_results';
             const queryParams = new URLSearchParams(window.location.search);
-            const hasFilterQuery = ['search', 'category', 'subcategory', 'related_subcategory', 'page']
+            const hasFilterQuery = ['search', 'category', 'subcategory', 'related_subcategory', 'year', 'page']
                 .some((key) => {
                     const value = queryParams.get(key);
                     return value !== null && value !== '';
@@ -366,7 +380,7 @@
                 setFilterResultFlag();
             });
 
-            [categoryFilter, subCategoryFilter, relatedSubCategoryFilter]
+            [categoryFilter, yearFilter, subCategoryFilter, relatedSubCategoryFilter]
                 .filter(Boolean)
                 .forEach((element) => {
                     element.addEventListener('change', submitFilterForm);

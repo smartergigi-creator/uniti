@@ -11,6 +11,7 @@ class Ebook extends Model
 
     protected $fillable = [
         'title',
+        'year',
         'author_name',
         'file_title',
         'pdf_path',

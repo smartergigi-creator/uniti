@@ -62,6 +62,7 @@ class HomeController extends Controller
         $selectedCategoryId = $request->integer('category') ?: null;
         $selectedSubcategoryId = $request->integer('subcategory') ?: null;
         $selectedRelatedSubcategoryId = $request->integer('related_subcategory') ?: null;
+        $selectedYear = $request->integer('year') ?: null;
 
         if ($selectedCategoryId) {
             $isParentCategory = Category::where('id', $selectedCategoryId)
@@ -145,6 +146,10 @@ class HomeController extends Controller
             $query->where('related_subcategory_id', $selectedRelatedSubcategoryId);
         }
 
+        if ($selectedYear) {
+            $query->where('year', $selectedYear);
+        }
+
         $ebooks = $query->latest()->paginate(32);
         $categories = Category::whereNull('parent_id')
             ->with([
@@ -172,16 +177,45 @@ class HomeController extends Controller
                 ->get();
         }
 
+        $minFilterYear = 2024;
+        $currentYear = (int) now()->year;
+
+        $availableYears = Ebook::query()
+            ->whereNotNull('year')
+            ->where('year', '>=', $minFilterYear)
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->map(fn ($year) => (int) $year)
+            ->filter()
+            ->values();
+
+        $defaultYears = $currentYear >= $minFilterYear
+            ? collect(range($currentYear, $minFilterYear))
+            : collect([$currentYear]);
+
+        $availableYears = $availableYears
+            ->merge($defaultYears)
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        if ($selectedYear && !$availableYears->contains((int) $selectedYear)) {
+            $selectedYear = null;
+        }
+
         return view('ebook.home', compact(
             'ebooks',
             'categories',
             'subcategories',
             'relatedSubcategories',
+            'availableYears',
             'canUploadNow',
             'canShareNow',
             'selectedCategoryId',
             'selectedSubcategoryId',
-            'selectedRelatedSubcategoryId'
+            'selectedRelatedSubcategoryId',
+            'selectedYear'
         ));
     }
 }

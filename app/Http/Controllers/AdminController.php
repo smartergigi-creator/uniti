@@ -190,9 +190,10 @@ public function updateEbook(Request $request, $id)
     $ebook = Ebook::findOrFail($id);
 
     $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'author_name' => 'required|string|max:255',
-        'file_title' => 'required|string|max:255',
+        'title' => 'nullable|string|max:255',
+        'year' => 'nullable|integer|digits:4|min:1900|max:2100',
+        'author_name' => 'nullable|string|max:255',
+        'file_title' => 'nullable|string|max:255',
         'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
         'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
         'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
@@ -244,9 +245,22 @@ public function updateEbook(Request $request, $id)
         }
     }
 
-    $ebook->title = trim($validated['title']);
-    $ebook->author_name = trim($validated['author_name']);
-    $ebook->file_title = trim($validated['file_title']);
+    $title = trim((string) ($validated['title'] ?? ''));
+    $authorName = trim((string) ($validated['author_name'] ?? ''));
+    $fileTitle = trim((string) ($validated['file_title'] ?? ''));
+
+    if ($title !== '') {
+        $ebook->title = $title;
+    }
+    if ($request->filled('year')) {
+        $ebook->year = (int) $validated['year'];
+    }
+    if ($authorName !== '') {
+        $ebook->author_name = $authorName;
+    }
+    if ($fileTitle !== '') {
+        $ebook->file_title = $fileTitle;
+    }
     $ebook->category_id = $categoryId;
     $ebook->subcategory_id = $subcategoryId;
     $ebook->related_subcategory_id = $relatedSubcategoryId;
@@ -275,8 +289,15 @@ public function storeCategoryTree(Request $request)
         'new_parent_name' => 'nullable|string|max:120',
         'new_sub_name' => 'nullable|string|max:120',
         'new_related_name' => 'nullable|string|max:120',
+        'new_sub_names' => 'nullable|array',
+        'new_sub_names.*' => 'nullable|string|max:120',
+        'new_related_names' => 'nullable|array',
+        'new_related_names.*' => 'nullable|string|max:120',
         'parent_category_id' => 'nullable|exists:categories,id',
         'sub_category_id' => 'nullable|exists:categories,id',
+        'related_parent_sub' => 'nullable|string|max:191',
+        'related_parent_subs' => 'nullable|array',
+        'related_parent_subs.*' => 'nullable|string|max:191',
     ]);
     if ($validator->fails()) {
         return back()->withErrors($validator)->withInput()->with('open_modal', 'add');
@@ -285,30 +306,59 @@ public function storeCategoryTree(Request $request)
     $validated = $validator->validated();
 
     $newParentName = trim((string) ($validated['new_parent_name'] ?? ''));
-    $newSubName = trim((string) ($validated['new_sub_name'] ?? ''));
-    $newRelatedName = trim((string) ($validated['new_related_name'] ?? ''));
+    $newSubNames = collect($validated['new_sub_names'] ?? []);
+    $rawRelatedNames = collect($request->input('new_related_names', []));
+    $newRelatedNames = collect($validated['new_related_names'] ?? []);
 
-    if ($newParentName === '' && $newSubName === '' && $newRelatedName === '') {
+    if (!empty($validated['new_sub_name'])) {
+        $newSubNames->prepend($validated['new_sub_name']);
+    }
+    if (!empty($validated['new_related_name'])) {
+        $newRelatedNames->prepend($validated['new_related_name']);
+    }
+
+    $newSubNames = $newSubNames
+        ->map(fn ($name) => trim((string) $name))
+        ->filter(fn ($name) => $name !== '')
+        ->values();
+
+    $newRelatedNames = $newRelatedNames
+        ->map(fn ($name) => trim((string) $name))
+        ->filter(fn ($name) => $name !== '')
+        ->values();
+
+    $selectedParentId = (int) ($validated['parent_category_id'] ?? 0);
+    $selectedSubId = (int) ($validated['sub_category_id'] ?? 0);
+    $relatedParentSub = trim((string) ($validated['related_parent_sub'] ?? ''));
+    $relatedParentSubs = collect($request->input('related_parent_subs', []));
+
+    if (
+        $newParentName === '' &&
+        $newSubNames->isEmpty() &&
+        $newRelatedNames->isEmpty() &&
+        $selectedParentId <= 0 &&
+        $selectedSubId <= 0
+    ) {
         return back()->withErrors([
-            'new_parent_name' => 'Enter at least one category name to save.'
+            'new_parent_name' => 'Enter at least one category name or select an existing category.'
         ])->withInput()->with('open_modal', 'add');
     }
 
     $createdParent = null;
     $createdSub = null;
     $created = [];
+    $createdSubMap = [];
 
     if ($newParentName !== '') {
         $createdParent = $this->createCategoryWithUniqueSlug($newParentName, null);
         $created[] = "Parent: {$createdParent->name}";
     }
 
-    $selectedParentId = (int) ($validated['parent_category_id'] ?? 0);
     if ($selectedParentId <= 0 && $createdParent) {
         $selectedParentId = $createdParent->id;
     }
 
-    if ($newSubName !== '') {
+    if ($newSubNames->isNotEmpty()) {
         if ($selectedParentId <= 0) {
             return back()->withErrors([
                 'parent_category_id' => 'Select a parent category or create a new parent first.'
@@ -322,31 +372,86 @@ public function storeCategoryTree(Request $request)
             ])->withInput()->with('open_modal', 'add');
         }
 
-        $createdSub = $this->createCategoryWithUniqueSlug($newSubName, $selectedParentId);
-        $created[] = "Sub: {$createdSub->name}";
+        foreach ($newSubNames as $newSubName) {
+            $createdSub = $this->createCategoryWithUniqueSlug($newSubName, $selectedParentId);
+            $created[] = "Sub: {$createdSub->name}";
+            $createdSubMap[Str::lower($newSubName)] = $createdSub->id;
+        }
     }
 
-    $selectedSubId = (int) ($validated['sub_category_id'] ?? 0);
+    if ($relatedParentSub !== '') {
+        if (Str::startsWith($relatedParentSub, 'existing:')) {
+            $pickedSubId = (int) Str::after($relatedParentSub, 'existing:');
+            if ($pickedSubId > 0) {
+                $selectedSubId = $pickedSubId;
+            }
+        } elseif (Str::startsWith($relatedParentSub, 'new:')) {
+            $pickedSubName = Str::lower(trim(Str::after($relatedParentSub, 'new:')));
+            if ($pickedSubName !== '' && isset($createdSubMap[$pickedSubName])) {
+                $selectedSubId = (int) $createdSubMap[$pickedSubName];
+            }
+        }
+    }
+
+    if ($relatedParentSub !== '' && $relatedParentSubs->isEmpty()) {
+        $relatedParentSubs->push($relatedParentSub);
+    }
+
     if ($selectedSubId <= 0 && $createdSub) {
         $selectedSubId = $createdSub->id;
     }
 
-    if ($newRelatedName !== '') {
-        if ($selectedSubId <= 0) {
-            return back()->withErrors([
-                'sub_category_id' => 'Select a sub category or create a new sub category first.'
-            ])->withInput()->with('open_modal', 'add');
-        }
+    $relatedEntries = $rawRelatedNames->map(function ($rawName, $idx) use ($relatedParentSubs) {
+        return [
+            'name' => trim((string) $rawName),
+            'mapping' => trim((string) $relatedParentSubs->get($idx, '')),
+        ];
+    })->filter(fn ($entry) => $entry['name'] !== '')->values();
 
-        $selectedSub = Category::find($selectedSubId);
-        if (!$selectedSub || $selectedSub->parent_id === null) {
-            return back()->withErrors([
-                'sub_category_id' => 'Please choose a valid sub category.'
-            ])->withInput()->with('open_modal', 'add');
-        }
+    if ($relatedEntries->isNotEmpty()) {
+        $resolveSubIdFromMapping = function (?string $mappingValue) use ($createdSubMap, $selectedSubId) {
+            $mappingValue = trim((string) $mappingValue);
+            if ($mappingValue === '') {
+                return $selectedSubId > 0 ? $selectedSubId : 0;
+            }
 
-        $createdRelated = $this->createCategoryWithUniqueSlug($newRelatedName, $selectedSubId);
-        $created[] = "Related: {$createdRelated->name}";
+            if (Str::startsWith($mappingValue, 'existing:')) {
+                return (int) Str::after($mappingValue, 'existing:');
+            }
+
+            if (Str::startsWith($mappingValue, 'new:')) {
+                $mappedSubName = Str::lower(trim(Str::after($mappingValue, 'new:')));
+                if ($mappedSubName !== '' && isset($createdSubMap[$mappedSubName])) {
+                    return (int) $createdSubMap[$mappedSubName];
+                }
+            }
+
+            return 0;
+        };
+
+        foreach ($relatedEntries as $entry) {
+            $newRelatedName = $entry['name'];
+            $targetSubId = $resolveSubIdFromMapping($entry['mapping']);
+            if ($targetSubId <= 0) {
+                return back()->withErrors([
+                    'related_parent_subs' => 'Choose valid sub category mapping for each related sub category.'
+                ])->withInput()->with('open_modal', 'add');
+            }
+
+            $selectedSub = Category::find($targetSubId);
+            if (!$selectedSub || $selectedSub->parent_id === null) {
+                return back()->withErrors([
+                    'related_parent_subs' => 'Please choose a valid sub category for related mapping.'
+                ])->withInput()->with('open_modal', 'add');
+            }
+
+            $createdRelated = $this->createCategoryWithUniqueSlug($newRelatedName, $targetSubId);
+            $created[] = "Related: {$createdRelated->name}";
+        }
+    }
+
+    if (empty($created)) {
+        return back()->with('success', 'Saved successfully.');
     }
 
     return back()->with('success', 'Saved successfully - ' . implode(' | ', $created));

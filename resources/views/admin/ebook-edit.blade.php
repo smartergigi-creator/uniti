@@ -35,19 +35,25 @@
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Ebook Title</label>
                     <input type="text" name="title" class="form-control" maxlength="255"
-                        value="{{ old('title', $ebook->title) }}" required>
+                        value="{{ old('title', $ebook->title) }}">
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">Author Name</label>
                     <input type="text" name="author_name" class="form-control" maxlength="255"
-                        value="{{ old('author_name', $ebook->author_name) }}" required>
+                        value="{{ old('author_name', $ebook->author_name) }}">
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Year</label>
+                    <input type="number" name="year" class="form-control" min="1900" max="2100"
+                        value="{{ old('year', $ebook->year) }}" placeholder="e.g. 2026">
                 </div>
 
                 <div class="col-md-6">
                     <label class="form-label fw-semibold">File Title</label>
                     <input type="text" name="file_title" class="form-control" maxlength="255"
-                        value="{{ old('file_title', $ebook->file_title) }}" required>
+                        value="{{ old('file_title', $ebook->file_title) }}">
                 </div>
 
                 <div class="col-12 pt-1">

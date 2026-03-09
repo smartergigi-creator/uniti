@@ -63,6 +63,7 @@ class EbookController extends Controller
             $request->validate([
                 'ebook_name' => 'required|string|max:255',
                 'author_name' => 'required|string|max:255',
+                'year' => 'nullable|integer|digits:4|min:1900|max:2100',
                 'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
                 'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
                 'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
@@ -78,6 +79,7 @@ class EbookController extends Controller
             $created = 0;
             $manualTitle = $request->ebook_name;
             $authorName = $request->author_name;
+            $publishYear = $request->filled('year') ? (int) $request->year : null;
 
             foreach ($files as $file) {
 
@@ -116,6 +118,7 @@ class EbookController extends Controller
 
                 Ebook::create([
                     'title'       => $manualTitle,
+                    'year'        => $publishYear,
                     'author_name' => $authorName,
                     'slug'        => $slug,
                     'file_title'  => $safeTitle,

@@ -76,6 +76,8 @@
                                             placeholder="Enter Author Name" required>
                                     </div>
 
+                                    <input type="hidden" name="year" value="{{ now()->year }}">
+
                                     <!-- Category (Parent Only) -->
                                     <div class="col-md-3" id="categoryField"
                                         style="{{ $categories->count() > 0 ? '' : 'display:none;' }}">
