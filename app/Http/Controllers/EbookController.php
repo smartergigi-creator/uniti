@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Models\Ebook;
+use App\Models\EbookIssueReport;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 
 class EbookController extends Controller
@@ -96,8 +98,16 @@ class EbookController extends Controller
                     . '_' . time()
                     . '_' . Str::random(4);
 
+                // $rootFolder = config('app.file_root');
+                // $basePath = base_path("../{$rootFolder}/ebooks/$folder");//live
+                // $basePath = base_path("{$rootFolder}/ebooks/$folder");//local
                 $rootFolder = config('app.file_root');
-                $basePath = base_path("../{$rootFolder}/ebooks/$folder");
+
+                if ($rootFolder == 'public') {
+                    $basePath = base_path("public/ebooks/$folder");
+                } else {
+                    $basePath = base_path("../public_html/ebooks/$folder");
+                }
 
                 if (!File::exists($basePath)) {
                     File::makeDirectory($basePath, 0755, true);
@@ -156,15 +166,75 @@ class EbookController extends Controller
     public function view($slug)
     {
         $ebook = Ebook::where('slug', $slug)->firstOrFail();
+        $reportRecipients = collect();
+
+        if (auth()->check()) {
+            $reportRecipients = User::query()
+                ->where('status', 'active')
+                ->whereKeyNot(auth()->id())
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']);
+        }
 
         $rootFolder = config('app.file_root');
-        $pdfPath = base_path("../{$rootFolder}/" . $ebook->pdf_path);
+        // $pdfPath = base_path("../{$rootFolder}/" . $ebook->pdf_path);
 
+        if ($rootFolder == 'public') {
+        $pdfPath = base_path("public/" . $ebook->pdf_path);
+        } else {
+        $pdfPath = base_path("../public_html/" . $ebook->pdf_path);
+        }
         if (!file_exists($pdfPath)) {
             abort(404, 'PDF file not found');
         }
 
-        return view('ebook.flipbook', compact('ebook'));
+        return view('ebook.flipbook', compact('ebook', 'reportRecipients'));
+    }
+
+    public function reportIssue(Request $request, $id)
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $ebook = Ebook::find($id);
+        if (!$ebook) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ebook not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'recipient_id' => ['required', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
+            'page' => ['required', 'integer', 'min:1'],
+            'description' => ['required', 'string', 'max:2000'],
+        ]);
+
+        if ((int) $validated['recipient_id'] === (int) $user->id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You cannot assign the report to yourself.',
+            ], 422);
+        }
+
+        EbookIssueReport::create([
+            'ebook_id' => $ebook->id,
+            'reported_by' => $user->id,
+            'recipient_id' => $validated['recipient_id'],
+            'page' => $validated['page'],
+            'description' => trim($validated['description']),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Issue report saved successfully.',
+        ]);
     }
 
     /* ======================================================

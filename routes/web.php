@@ -62,6 +62,7 @@ if (app()->environment('local')) {
 
         Auth::guard('web')->login($user);
         session([
+            'auth_source' => 'local',
             'serp_token' => 'local-dev-token',
             'serp_refresh' => 'local-dev-refresh',
             'serp_expiry' => now()->addDays(7)->toDateTimeString(),
@@ -78,9 +79,11 @@ if (app()->environment('local')) {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth','serp.auth','nocache'])->group(function () {
+Route::middleware(['auth','serp.auth','serp.refresh','nocache'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'userHome']);
+    Route::get('/reported-issues', [HomeController::class, 'reportedIssues'])
+        ->name('reported-issues.index');
 
     /* ---------------- Dashboard ---------------- */
 
@@ -95,6 +98,9 @@ Route::middleware(['auth','serp.auth','nocache'])->group(function () {
 
     Route::get('/ebook/{slug}', [EbookController::class, 'view'])
     ->name('ebook.view');
+
+    Route::post('/ebook/{id}/report-issue', [EbookController::class, 'reportIssue'])
+        ->name('ebook.report-issue');
 
     /* ---------------- Upload ---------------- */
 

@@ -11,14 +11,17 @@ class SerpAuth
 {
     public function handle(Request $request, Closure $next)
     {
-        // Debug (temporary)
-        //  dd('Middleware', session()->all());
-
-        if (!session()->has('serp_token')) { 
+        if (!auth()->check()) {
             return redirect('/login');
         }
 
-        
+        if (session('auth_source') === 'local') {
+            return $next($request);
+        }
+
+        if (!session()->has('serp_token')) {
+            return redirect('/login');
+        }
 
         return $next($request);
     }

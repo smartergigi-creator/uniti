@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 
@@ -20,6 +21,41 @@ use App\Models\User;
 
 class SerpAuthController extends Controller
 {
+    protected function attemptLocalFallback(Request $request, string $reason)
+    {
+        $identifier = trim((string) $request->username);
+
+        $user = User::query()
+            ->where('serp_id', $identifier)
+            ->orWhere('email', $identifier)
+            ->first();
+
+        if (!$user || empty($user->password) || !Hash::check($request->password, $user->password)) {
+            Log::warning('Local fallback login failed', [
+                'username' => $identifier,
+                'reason' => $reason,
+                'user_found' => (bool) $user,
+            ]);
+
+            return back()
+                ->with('error', 'Login failed. SERP unavailable and local credentials did not match.')
+                ->withInput($request->only('username'));
+        }
+
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
+        session()->forget(['serp_token', 'serp_refresh', 'serp_expiry']);
+        session(['auth_source' => 'local']);
+
+        Log::info('Local fallback login succeeded', [
+            'username' => $identifier,
+            'reason' => $reason,
+            'user_id' => $user->id,
+        ]);
+
+        return redirect('/home');
+    }
+
 // public function login(Request $request)
 // {
 //     $request->validate([
@@ -103,16 +139,19 @@ public function login(Request $request)
             ]);
 
             $status = $res->status();
-            $message = match (true) {
-                $status === 401, $status === 403 => 'Invalid SERP credentials',
-                $status === 429 => 'Too many attempts. Please try again later.',
-                $status >= 500 => 'SERP service unavailable. Please try again.',
-                default => 'Login failed. Please verify your details.',
-            };
+            if (in_array($status, [401, 403, 422], true)) {
+                return back()
+                    ->with('error', 'Invalid SERP credentials')
+                    ->withInput($request->only('username'));
+            }
 
-            return back()
-                ->with('error', $message)
-                ->withInput($request->only('username'));
+            if ($status === 429) {
+                return back()
+                    ->with('error', 'Too many attempts. Please try again later.')
+                    ->withInput($request->only('username'));
+            }
+
+            return $this->attemptLocalFallback($request, 'serp_status_' . $status);
         }
 
         $serp = $res->json();
@@ -163,6 +202,7 @@ public function login(Request $request)
 
       // Store SERP tokens for middleware
 session([
+    'auth_source'  => 'serp',
     'serp_token'   => $serp['token'] ?? null,
     'serp_refresh' => $serp['refreshToken'] ?? null,
     'serp_expiry'  => !empty($serp['expiration'])
@@ -189,10 +229,7 @@ return redirect('/home');
             'message' => $e->getMessage(),
         ]);
 
-        return back()
-            ->with('error', 'Login failed. Please try again later.')
-            ->withInput($request->only('username'));
-
+        return $this->attemptLocalFallback($request, 'serp_exception');
     }
 }
 
@@ -206,6 +243,7 @@ public function logout(Request $request)
 {
     Auth::logout();
 
+    $request->session()->forget(['auth_source', 'serp_token', 'serp_refresh', 'serp_expiry']);
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 

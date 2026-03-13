@@ -6,7 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Tymon\JWTAuth\Http\Middleware\Authenticate as JwtAuthenticate;
 
 use App\Http\Middleware\AdminMiddleware;
-// use App\Http\Middleware\SerpAuth;
+use App\Http\Middleware\SerpAuth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -38,8 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
 'can.share' => \App\Http\Middleware\CanShare::class,
 
 
-    // SERP Auto Refresh Middleware (ONLY ONE)
-    'serp.auth' => \App\Http\Middleware\SerpRefreshMiddleware::class,
+    'serp.auth' => \App\Http\Middleware\SerpAuth::class,
+    'serp.refresh' => \App\Http\Middleware\SerpRefreshMiddleware::class,
 
 ]);
 

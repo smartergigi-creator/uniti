@@ -44,6 +44,10 @@ window.addEventListener("pageshow", (event) => {
     let firstRealPageIndex = 1;
     let lastRealPageIndex = 1;
     let lastNavigablePageIndex = 1;
+    const requestedPageNumber = Math.max(
+        1,
+        Number.parseInt(new URLSearchParams(window.location.search).get("page") || "1", 10) || 1,
+    );
 
     let isReady = false;
     let isInitRunning = false;
@@ -254,6 +258,61 @@ window.addEventListener("pageshow", (event) => {
         lastNavigablePageIndex = Math.min(lastRealPageIndex, lastLoaded);
     }
 
+    function syncViewerState() {
+        const allPages = Array.from(document.querySelectorAll("#flipbook .page"));
+        const realPages = allPages.filter((page) => !page.classList.contains("fake"));
+        const currentIndex = pageFlip ? pageFlip.getCurrentPageIndex() : firstRealPageIndex;
+        const currentPage = allPages[currentIndex] || realPages[0] || null;
+        const currentPageNumber = Number(currentPage?.dataset.pageNo || realPages[0]?.dataset.pageNo || 1);
+        const totalPages = realPages.length || 1;
+        const usePortrait = pageFlip ? pageFlip.getSettings().usePortrait : window.innerWidth <= 900;
+        let currentPageLabel = String(currentPageNumber);
+
+        if (!usePortrait && currentPageNumber > 1 && currentPageNumber < totalPages) {
+            currentPageLabel = `${currentPageNumber}-${currentPageNumber + 1}`;
+        }
+
+        window.__EBOOK_VIEWER__ = {
+            getCurrentPageNumber() {
+                return currentPageNumber;
+            },
+            getCurrentPageLabel() {
+                return currentPageLabel;
+            },
+            getTotalPages() {
+                return totalPages;
+            },
+        };
+
+        const currentPageEl = document.getElementById("ebookCurrentPage");
+        const totalPagesEl = document.getElementById("ebookTotalPages");
+
+        if (currentPageEl) {
+            currentPageEl.textContent = currentPageLabel;
+        }
+
+        if (totalPagesEl) {
+            totalPagesEl.textContent = String(totalPages);
+        }
+    }
+
+    function resolveRequestedPageIndex(book, requestedPage) {
+        const allPages = Array.from(book.querySelectorAll(".page"));
+        const matchedIndex = allPages.findIndex((page) => {
+            if (page.classList.contains("fake")) {
+                return false;
+            }
+
+            return Number(page.dataset.pageNo || 0) === requestedPage;
+        });
+
+        if (matchedIndex === -1) {
+            return firstRealPageIndex;
+        }
+
+        return matchedIndex;
+    }
+
     function initFlipbook() {
         if (pageFlip) return;
 
@@ -310,7 +369,10 @@ window.addEventListener("pageshow", (event) => {
         pageFlip.loadFromHTML(book.querySelectorAll(".page"));
 
         setTimeout(() => {
-            pageFlip.turnToPage(firstRealPageIndex);
+            const initialPageIndex = resolveRequestedPageIndex(book, requestedPageNumber);
+            lastNavigablePageIndex = Math.max(lastNavigablePageIndex, initialPageIndex);
+            pageFlip.turnToPage(initialPageIndex);
+            syncViewerState();
             updateNav();
         }, 150);
 
@@ -326,6 +388,7 @@ window.addEventListener("pageshow", (event) => {
                 pageFlip.turnToPage(clamped);
             }
 
+            syncViewerState();
             updateNav();
             playSound();
         });
@@ -388,6 +451,7 @@ window.addEventListener("pageshow", (event) => {
                 const target = current - 1;
                 if (target <= firstRealPageIndex) {
                     pageFlip.turnToPage(firstRealPageIndex);
+                    syncViewerState();
                     updateNav();
                     return;
                 }
@@ -407,6 +471,7 @@ window.addEventListener("pageshow", (event) => {
                 const target = current + 1;
                 if (target >= lastNavigablePageIndex) {
                     pageFlip.turnToPage(lastNavigablePageIndex);
+                    syncViewerState();
                     updateNav();
                     return;
                 }
@@ -421,6 +486,7 @@ window.addEventListener("pageshow", (event) => {
 
         const i = pageFlip.getCurrentPageIndex();
         const t = lastNavigablePageIndex;
+        syncViewerState();
 
         const prev = document.getElementById("prevPage");
         const next = document.getElementById("nextPage");
@@ -447,12 +513,19 @@ window.addEventListener("pageshow", (event) => {
         const zi = document.getElementById("zoomIn");
         const zo = document.getElementById("zoomOut");
         const zr = document.getElementById("zoomReset");
+        const refreshBtn = document.getElementById("refreshViewer");
 
         if (!zi || !zo || !zr) return;
 
         zi.onclick = () => applyZoom(zoomLevel + ZOOM_STEP);
         zo.onclick = () => applyZoom(zoomLevel - ZOOM_STEP);
         zr.onclick = () => applyZoom(1);
+
+        if (refreshBtn) {
+            refreshBtn.onclick = () => {
+                window.location.reload();
+            };
+        }
     }
 
     /* ===============================

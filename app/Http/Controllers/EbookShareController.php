@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ebook;
+use App\Models\User;
 use Illuminate\Support\Str;
 
 class EbookShareController extends Controller
@@ -97,11 +98,12 @@ class EbookShareController extends Controller
         }
     }
 
-   public function view($token)
+public function view($token)
 {
     $ebook = Ebook::where('share_token', $token)
         ->where('share_enabled', 1)
         ->first();
+    $reportRecipients = collect();
 
     if (!$ebook) {
         return view('ebook/errors.share-invalid');
@@ -122,12 +124,30 @@ class EbookShareController extends Controller
     $ebook->increment('current_views');
 
     // 🔥 IMPORTANT FIX — Check inside public_html
-    $pdfPath = base_path('../public_html/' . $ebook->pdf_path);
+    // $pdfPath = base_path('../public_html/' . $ebook->pdf_path);
+
+    $rootFolder = config('app.file_root');
+
+    if ($rootFolder == 'public') {
+        $pdfPath = base_path("public/" . $ebook->pdf_path);
+    } else {
+        $pdfPath = base_path("../public_html/" . $ebook->pdf_path);
+    }
+
+
 
     if (!file_exists($pdfPath)) {
         return view('ebook/errors.share-invalid');
     }
 
-    return view('ebook.flipbook', compact('ebook'));
+    if (auth()->check()) {
+        $reportRecipients = User::query()
+            ->where('status', 'active')
+            ->whereKeyNot(auth()->id())
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+    }
+
+    return view('ebook.flipbook', compact('ebook', 'reportRecipients'));
 }
 }

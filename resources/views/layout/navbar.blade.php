@@ -26,6 +26,9 @@
                         @endif
                         <li><a href="{{ url('/home') }}" class="dropdown-item">Home</a></li>
                         <li>
+                            <a href="{{ route('reported-issues.index') }}" class="dropdown-item">Reported Issues</a>
+                        </li>
+                        <li>
                             <hr class="dropdown-divider">
                         </li>
                         <li>
@@ -200,6 +203,9 @@
                             @endif
                             <li><a href="{{ url('/home') }}" class="dropdown-item">Home</a></li>
                             <li>
+                                <a href="{{ route('reported-issues.index') }}" class="dropdown-item">Reported Issues</a>
+                            </li>
+                            <li>
                                 <hr class="dropdown-divider">
                             </li>
                             <li>
@@ -270,9 +276,6 @@
                 'bisita.com.ph',
                 'smarter.com.ph',
             ];
-            $websiteDropdownClass = count($websiteLinks) > 10
-                ? 'dropdown-menu website-links-menu multi-column-menu'
-                : 'dropdown-menu website-links-menu';
         @endphp
 
         <ul class="navbar-nav mobile-menu-list">
@@ -281,11 +284,12 @@
                 <a class="nav-link" href="{{ $homeUrl }}">Home</a>
             </li>
 
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+            <li class="nav-item mobile-menu-group">
+                <a class="nav-link dropdown-toggle" href="#mobileWebsiteLinks" data-bs-toggle="collapse"
+                    role="button" aria-expanded="false" aria-controls="mobileWebsiteLinks">
                     Website
                 </a>
-                <ul class="{{ $websiteDropdownClass }}">
+                <ul class="collapse mobile-submenu-list" id="mobileWebsiteLinks">
                     @foreach ($websiteLinks as $websiteLink)
                         <li>
                             <a class="dropdown-item" href="{{ 'https://' . $websiteLink }}" target="_blank"
@@ -298,11 +302,65 @@
             </li>
 
             @foreach ($menuCategories as $menuCategory)
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
-                        {{ $menuCategory->name }}
-                    </a>
-                </li>
+                @if ($menuCategory->children->isNotEmpty())
+                    <li class="nav-item mobile-menu-group">
+                        <a class="nav-link dropdown-toggle" href="#mobileCategory{{ $menuCategory->id }}"
+                            data-bs-toggle="collapse" role="button" aria-expanded="false"
+                            aria-controls="mobileCategory{{ $menuCategory->id }}">
+                            {{ $menuCategory->name }}
+                        </a>
+                        <ul class="collapse mobile-submenu-list" id="mobileCategory{{ $menuCategory->id }}">
+                            <li>
+                                <a class="dropdown-item"
+                                    href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
+                                    All {{ $menuCategory->name }}
+                                </a>
+                            </li>
+                            @foreach ($menuCategory->children as $menuSubcategory)
+                                @if ($menuSubcategory->children->isNotEmpty())
+                                    <li class="mobile-submenu-group">
+                                        <a class="dropdown-item dropdown-toggle"
+                                            href="#mobileSubcategory{{ $menuSubcategory->id }}" data-bs-toggle="collapse"
+                                            role="button" aria-expanded="false"
+                                            aria-controls="mobileSubcategory{{ $menuSubcategory->id }}">
+                                            {{ $menuSubcategory->name }}
+                                        </a>
+                                        <ul class="collapse mobile-related-submenu"
+                                            id="mobileSubcategory{{ $menuSubcategory->id }}">
+                                            <li>
+                                                <a class="dropdown-item related-subcategory-item"
+                                                    href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
+                                                    All {{ $menuSubcategory->name }}
+                                                </a>
+                                            </li>
+                                            @foreach ($menuSubcategory->children as $menuRelatedSubcategory)
+                                                <li>
+                                                    <a class="dropdown-item related-subcategory-item"
+                                                        href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}&related_subcategory={{ $menuRelatedSubcategory->id }}#ebooksSection">
+                                                        {{ $menuRelatedSubcategory->name }}
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </li>
+                                @else
+                                    <li>
+                                        <a class="dropdown-item"
+                                            href="{{ $homeUrl }}?category={{ $menuCategory->id }}&subcategory={{ $menuSubcategory->id }}#ebooksSection">
+                                            {{ $menuSubcategory->name }}
+                                        </a>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </li>
+                @else
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
+                            {{ $menuCategory->name }}
+                        </a>
+                    </li>
+                @endif
             @endforeach
 
         </ul>

@@ -187,7 +187,8 @@
                 </div>
 
                 <div class="col-md-12 col-lg-2">
-                    <a href="{{ url('/home#ebooksSection') }}" class="btn btn-outline-secondary w-100" id="clearFilterBtn">
+                    <a href="{{ url('/home#ebooksSection') }}" class="btn btn-outline-secondary w-100"
+                        id="clearFilterBtn">
                         Clear Filter
                     </a>
                 </div>
@@ -211,19 +212,20 @@
                             </div>
 
                             <div class="book-actions" aria-label="Book actions">
-                                <a href="{{ route('ebook.view', $book->slug) }}" class="book-action-btn"
-                                    title="Preview">
+                                <a href="{{ route('ebook.view', $book->slug) }}" class="book-action-btn book-action-view"
+                                    title="View">
                                     <i class="bi bi-eye"></i>
-                                    <span>Preview</span>
+                                    <span>View</span>
                                 </a>
 
                                 @if ($canShareNow)
-                                    <button type="button" class="book-action-btn share-action-btn"
+                                    <button type="button" class="book-action-btn book-action-share share-action-btn"
                                         onclick="openShareModal({{ $book->id }})" title="Share">
                                         <i class="bi bi-share"></i>
                                         <span>Share</span>
                                     </button>
                                 @endif
+
                             </div>
 
                             <div class="book-info">
@@ -381,7 +383,7 @@
             });
 
             [categoryFilter, yearFilter, subCategoryFilter, relatedSubCategoryFilter]
-                .filter(Boolean)
+            .filter(Boolean)
                 .forEach((element) => {
                     element.addEventListener('change', submitFilterForm);
                 });
@@ -561,4 +563,3 @@
     </script>
 
 @endsection
-

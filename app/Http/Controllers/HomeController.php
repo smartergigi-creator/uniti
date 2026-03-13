@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ebook;
 use App\Models\Category;
+use App\Models\EbookIssueReport;
 
 class HomeController extends Controller
 {
@@ -216,6 +217,48 @@ class HomeController extends Controller
             'selectedSubcategoryId',
             'selectedRelatedSubcategoryId',
             'selectedYear'
+        ));
+    }
+
+    public function reportedIssues(Request $request)
+    {
+        $user = auth()->user();
+        $search = trim((string) $request->query('search', ''));
+
+        $issues = EbookIssueReport::query()
+            ->with([
+                'ebook:id,title,slug',
+                'reporter:id,name,email',
+                'recipient:id,name,email',
+            ])
+            ->where('recipient_id', $user->id)
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($innerQuery) use ($search) {
+                    $innerQuery->where('description', 'like', '%' . $search . '%')
+                        ->orWhere('page', 'like', '%' . $search . '%')
+                        ->orWhereHas('ebook', function ($ebookQuery) use ($search) {
+                            $ebookQuery->where('title', 'like', '%' . $search . '%');
+                        })
+                        ->orWhereHas('reporter', function ($reporterQuery) use ($search) {
+                            $reporterQuery->where('name', 'like', '%' . $search . '%')
+                                ->orWhere('email', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $openCount = EbookIssueReport::where('recipient_id', $user->id)->count();
+        $todayCount = EbookIssueReport::where('recipient_id', $user->id)
+            ->whereDate('created_at', today())
+            ->count();
+
+        return view('ebook.reported-issues', compact(
+            'issues',
+            'search',
+            'openCount',
+            'todayCount'
         ));
     }
 }

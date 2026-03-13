@@ -13,6 +13,10 @@ class SerpRefreshMiddleware
 {
     public function handle($request, Closure $next)
     {
+        if (session('auth_source') === 'local') {
+            return $next($request);
+        }
+
         $expiry  = session('serp_expiry');
         $refresh = session('serp_refresh');
 

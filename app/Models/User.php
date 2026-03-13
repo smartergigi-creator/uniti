@@ -26,6 +26,7 @@ protected $fillable = [
     'serp_id',
     'name',
     'email',
+    'password',
     'role',
 
     'can_upload',
