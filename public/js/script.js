@@ -205,13 +205,27 @@ window.addEventListener("pageshow", (event) => {
         const landscape = vw > vh;
 
         const viewer = document.getElementById("viewer-wrapper");
+        const headerRow = document.querySelector(".ebook-header-row");
+        const bottomControls = document.querySelector(".ebook-bottom-controls");
+        const headerRect = headerRow?.getBoundingClientRect();
+        const controlsRect = bottomControls?.getBoundingClientRect();
         const rect = viewer?.getBoundingClientRect();
 
         const availableW = Math.max(220, Math.floor((rect?.width || vw) - (mobile ? 12 : 48)));
-        const availableH = Math.max(
+        let availableH = Math.max(
             220,
             Math.floor((rect?.height || vh) - (mobile ? (landscape ? 10 : 20) : 36)),
         );
+
+        if (mobile) {
+            const headerBottom = headerRect ? headerRect.bottom : 0;
+            const controlsHeight = controlsRect ? controlsRect.height : 54;
+            const chromeOffset = landscape ? 20 : 28;
+            availableH = Math.max(
+                180,
+                Math.floor(vh - headerBottom - controlsHeight - chromeOffset),
+            );
+        }
 
         let w = availableW * (mobile && landscape ? 0.98 : 0.92);
         let h = w * PAGE_RATIO;
