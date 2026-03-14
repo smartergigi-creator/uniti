@@ -27,6 +27,7 @@ protected $fillable = [
     'name',
     'email',
     'password',
+    'serp_token',
     'role',
 
     'can_upload',
@@ -37,6 +38,7 @@ protected $fillable = [
     'share_limit',
 
     'status',
+    'created_from',
     'created_by'
 ];
 

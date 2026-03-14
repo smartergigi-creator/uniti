@@ -13,10 +13,6 @@ class SerpRefreshMiddleware
 {
     public function handle($request, Closure $next)
     {
-        if (session('auth_source') === 'local') {
-            return $next($request);
-        }
-
         $expiry  = session('serp_expiry');
         $refresh = session('serp_refresh');
 
@@ -27,14 +23,8 @@ class SerpRefreshMiddleware
 
         $expiryTime = Carbon::parse($expiry);
 
-        // Refresh before 2 mins
         if (now()->addMinutes(2)->greaterThan($expiryTime)) {
-        // if (true) {
-
-
-
-// Log::info('SERP TOKEN REFRESH TRIGGERED');
-            $res = Http::withHeaders([
+            $res = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post('https://api-serp.smarter.com.ph/api/auth/refresh', [
                 'refreshToken' => $refresh
@@ -45,10 +35,27 @@ class SerpRefreshMiddleware
                 return redirect('/login');
             }
 
+            $payload = $res->json();
+            $token = $payload['token'] ?? $payload['accessToken'] ?? $payload['data']['token'] ?? $payload['data']['accessToken'] ?? null;
+            $refreshToken = $payload['refreshToken'] ?? $payload['refresh_token'] ?? $payload['data']['refreshToken'] ?? $payload['data']['refresh_token'] ?? null;
+            $expiration = $payload['expiration'] ?? $payload['expiresAt'] ?? $payload['expires_at'] ?? $payload['data']['expiration'] ?? $payload['data']['expiresAt'] ?? $payload['data']['expires_at'] ?? null;
+
+            if (!$token || !$refreshToken) {
+                Log::warning('SERP refresh response missing token data', [
+                    'response' => $payload,
+                ]);
+
+                session()->flush();
+                return redirect('/login');
+            }
+
             session([
-                'serp_token'   => $res->json('token'),
-                'serp_refresh' => $res->json('refreshToken'),
-                'serp_expiry'  => Carbon::parse($res->json('expiration')),
+                'auth_source' => 'serp',
+                'serp_token' => $token,
+                'serp_refresh' => $refreshToken,
+                'serp_expiry' => $expiration
+                    ? Carbon::parse($expiration)->toDateTimeString()
+                    : now()->addMinutes((int) config('jwt.ttl', 60))->toDateTimeString(),
             ]);
         }
 

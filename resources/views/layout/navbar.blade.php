@@ -126,7 +126,8 @@
 
                 @foreach ($menuCategories as $menuCategory)
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle"
+                            href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
                             {{ $menuCategory->name }}
                         </a>
 

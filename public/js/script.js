@@ -912,6 +912,10 @@ window.addEventListener("pageshow", (event) => {
 
 function copyShareLink() {
     const input = document.getElementById("shareLinkInput");
+    if (!input) {
+        alert("Share link is unavailable");
+        return;
+    }
     input.select();
     document.execCommand("copy");
     alert("Link copied!");
@@ -1150,15 +1154,34 @@ function openShareModal(id) {
                 return;
             }
 
-            // Set link
-            document.getElementById("shareLinkInput").value = data.publicLink;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard
+                    .writeText(data.publicLink)
+                    .then(() => {
+                        alert("Link copied!");
+                    })
+                    .catch(() => {
+                        const input =
+                            document.getElementById("shareLinkInput");
+                        if (!input) {
+                            alert(data.publicLink);
+                            return;
+                        }
 
-            // Open modal
-            let modal = new bootstrap.Modal(
-                document.getElementById("shareModal"),
-            );
+                        input.value = data.publicLink;
+                        copyShareLink();
+                    });
+                return;
+            }
 
-            modal.show();
+            const input = document.getElementById("shareLinkInput");
+            if (!input) {
+                alert(data.publicLink);
+                return;
+            }
+
+            input.value = data.publicLink;
+            copyShareLink();
         })
         .catch(() => {
             alert("Server error");

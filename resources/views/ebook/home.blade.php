@@ -67,8 +67,12 @@
                                                     placeholder="Enter author name" required>
                                             </div>
 
-                                            <input type="hidden" name="year"
-                                                value="{{ (int) (request('year') ?: now()->year) }}">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Year</label>
+                                                <input type="number" name="year" class="form-control" min="1900"
+                                                    max="2100" placeholder="Enter year"
+                                                    value="{{ old('year', request('year')) }}">
+                                            </div>
 
                                             <div class="mb-3" id="uploadCategoryField">
                                                 <label class="form-label fw-semibold">Category</label>
@@ -233,7 +237,9 @@
                                 @if (filled($book->author_name))
                                     <small class="d-block">Author: {{ $book->author_name }}</small>
                                 @endif
-                                <small>{{ $book->created_at?->format('d M Y') }}</small>
+                                <small>
+                                    {{ filled($book->year) ? $book->year : $book->created_at?->format('d M Y') }}
+                                </small>
                             </div>
                         </div>
 
@@ -253,22 +259,8 @@
 
     </div>
 
-    <div class="modal fade" id="shareModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Share Ebook</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="shareLinkInput" class="form-control" readonly>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="copyShareLink()">Copy Link</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <input type="text" id="shareLinkInput" class="form-control d-none" readonly tabindex="-1"
+        aria-hidden="true">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>

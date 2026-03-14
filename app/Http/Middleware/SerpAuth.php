@@ -4,8 +4,6 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-
 
 class SerpAuth
 {
@@ -15,11 +13,10 @@ class SerpAuth
             return redirect('/login');
         }
 
-        if (session('auth_source') === 'local') {
-            return $next($request);
-        }
-
-        if (!session()->has('serp_token')) {
+        if (session('auth_source') !== 'serp' || !session()->has('serp_token') || !session()->has('serp_refresh')) {
+            auth()->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
             return redirect('/login');
         }
 

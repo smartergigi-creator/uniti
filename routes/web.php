@@ -8,8 +8,6 @@ use App\Http\Controllers\SerpAuthController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\HomeController;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,38 +37,6 @@ Route::post('/serp-login', [SerpAuthController::class, 'login'])
 
 Route::post('/logout', [SerpAuthController::class, 'logout'])
     ->name('logout');
-
-// Local development fallback when SERP is unavailable.
-if (app()->environment('local')) {
-    Route::get('/dev-login', function () {
-        $user = User::firstOrCreate(
-            ['email' => 'local.admin@ebook.test'],
-            [
-                'name' => 'Local Admin',
-                'serp_id' => 'LOCAL_ADMIN',
-                'role' => 'admin',
-                'status' => 'active',
-                'created_by' => null,
-            ]
-        );
-
-        if ($user->role !== 'admin') {
-            $user->role = 'admin';
-            $user->status = 'active';
-            $user->save();
-        }
-
-        Auth::guard('web')->login($user);
-        session([
-            'auth_source' => 'local',
-            'serp_token' => 'local-dev-token',
-            'serp_refresh' => 'local-dev-refresh',
-            'serp_expiry' => now()->addDays(7)->toDateTimeString(),
-        ]);
-
-        return redirect('/home');
-    })->name('dev.login');
-}
 
 
 /*
