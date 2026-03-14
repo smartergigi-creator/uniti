@@ -375,12 +375,17 @@
             });
 
             modalEl.addEventListener('show.bs.modal', () => {
+                document.body.classList.add('viewer-modal-open');
                 syncCurrentPage();
                 filterUsers('');
                 searchInput.value = '';
                 closeDropdown();
                 feedback.textContent = '';
                 feedback.className = 'small mt-2';
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                document.body.classList.remove('viewer-modal-open');
             });
 
             form.addEventListener('submit', async (event) => {
