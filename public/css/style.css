@@ -31,6 +31,7 @@ body.ebook-view .ebook-header-row {
 body.ebook-view .ebook-header-col {
     padding-left: 0;
     padding-right: 0;
+    max-width: 270px;
 }
 
 body.ebook-view .ebook-header-row {
@@ -57,6 +58,9 @@ body.ebook-view .ebook-header-col .title {
     font-weight: 400;
     line-height: 1.15;
     letter-spacing: 0;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 /* Other pages stay white */
@@ -3364,18 +3368,22 @@ body.ebook-home #ebooksSection .book-info {
     }
 
     .ebook-side-nav {
+        position: fixed;
+        inset: 0;
         z-index: 100023;
     }
 
     .side-btn {
-        bottom: 18px;
+        top: 78%;
+        bottom: auto;
+        transform: translateY(-50%);
     }
 
     .side-btn.prev {
-        left: 10px;
+        left: 12px;
     }
 
     .side-btn.next {
-        right: 10px;
+        right: 12px;
     }
 }
