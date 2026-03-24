@@ -36,6 +36,7 @@ protected $fillable = [
     'upload_limit',
     'upload_reset_at',
     'share_limit',
+    'last_login_at',
 
     'status',
     'created_from',
@@ -70,6 +71,7 @@ protected $fillable = [
             'upload_limit' => 'integer',
             'upload_reset_at' => 'datetime',
             'share_limit' => 'integer',
+            'last_login_at' => 'datetime',
         ];
     }
 
