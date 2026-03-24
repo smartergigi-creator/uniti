@@ -175,7 +175,7 @@ class EbookShareController extends Controller
             $payload = $downloader->build(
                 $pdfPath,
                 $this->downloadFileName($ebook),
-                public_path('images/logo.png'),
+                $this->resolveWatermarkLogoPath(),
                 'UNITI'
             );
 
@@ -221,6 +221,23 @@ class EbookShareController extends Controller
         $name = preg_replace('/\s+/', ' ', $name) ?? $name;
 
         return ($name !== '' ? $name : 'ebook') . '.pdf';
+    }
+
+    protected function resolveWatermarkLogoPath(): ?string
+    {
+        $candidates = [
+            dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo.png',
+            public_path('images/logo.png'),
+            base_path('public/images/logo.png'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveManagedPath(string $relativePath): string

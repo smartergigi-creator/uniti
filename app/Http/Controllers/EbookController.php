@@ -192,7 +192,7 @@ class EbookController extends Controller
         $payload = $downloader->build(
             $pdfPath,
             $this->downloadFileName($ebook),
-            public_path('images/logo.png'),
+            $this->resolveWatermarkLogoPath(),
             'UNITI'
         );
 
@@ -203,7 +203,7 @@ class EbookController extends Controller
         ]);
     }
 
-    public function download($id)
+    public function download($id, WatermarkedPdfDownloader $downloader)
     {
         $ebook = Ebook::findOrFail($id);
         $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
@@ -212,7 +212,11 @@ class EbookController extends Controller
             abort(404, 'File not found');
         }
 
-        return response()->download($pdfPath, $this->downloadFileName($ebook));
+        try {
+            return $this->downloadWatermarked($ebook->slug, $downloader);
+        } catch (\Throwable $e) {
+            return response()->download($pdfPath, $this->downloadFileName($ebook));
+        }
     }
 
     public function reportIssue(Request $request, $id)
@@ -344,6 +348,23 @@ class EbookController extends Controller
         $name = preg_replace('/\s+/', ' ', $name) ?? $name;
 
         return ($name !== '' ? $name : 'ebook') . '.pdf';
+    }
+
+    protected function resolveWatermarkLogoPath(): ?string
+    {
+        $candidates = [
+            dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'logo.png',
+            public_path('images/logo.png'),
+            base_path('public/images/logo.png'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveManagedPath(string $relativePath): string
