@@ -17,6 +17,7 @@ body {
 /* ONLY EBOOK VIEW BACKGROUND */
 body.ebook-view {
     background: #e6e6e6;
+    overflow: hidden;
 }
 
 /* Viewer wrapper */
@@ -944,7 +945,7 @@ body.ebook-view #flipbook {
         padding: 10px 12px 0;
     }
 
-    body.ebook-view .row.flex-grow-1 > .col-12.d-flex {
+    body.ebook-view .row.flex-grow-1>.col-12.d-flex {
         align-items: flex-start !important;
         padding-top: 0;
     }
@@ -994,10 +995,20 @@ body:not(.ebook-view) .stf__page {
 ========================================================= */
 body.ebook-view .container,
 body.ebook-view .container-fluid {
-    max-width: none !important;
+    /* max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 0 !important; */
+}
+
+body.ebook-view .container-fluid.vh-100 {
+    height: auto !important;
+    /* 🔥 remove fixed height */
+    min-height: 100vh;
+    overflow: visible !important;
+
+    margin-top: -75px;
+    /* 🔥 allow space */
 }
 
 /* ======================================= */
@@ -1177,7 +1188,7 @@ body.ebook-view .container-fluid {
 ========================================================= */
 #viewer-wrapper {
     width: 100%;
-    min-height: 100%;
+    min-height: calc(100vh - 72px);
     display: none;
     /* shown by JS */
     flex-direction: column;
@@ -1186,7 +1197,7 @@ body.ebook-view .container-fluid {
 
     background: transparent;
     /* 🔥 BODY GREY WILL SHOW */
-    padding: 36px 18px 24px;
+    padding: 62px 28px 0px;
 
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -1195,6 +1206,16 @@ body.ebook-view .container-fluid {
 #viewer-wrapper.show {
     display: flex;
     opacity: 1;
+}
+
+#zoom-wrapper {
+    padding: 32px 14px 128px;
+    box-sizing: border-box;
+}
+
+body.ebook-view .container-fluid.vh-100 {
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* =========================================================
@@ -1223,29 +1244,29 @@ body.ebook-view .container-fluid {
    TOOLBAR
 ========================================================= */
 .viewer-toolbar {
-    position: absolute;
-    top: 18px;
-    right: 18px;
+    position: fixed;
+    top: 88px;
+    right: 14px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.96);
-    padding: 8px 10px;
-    border-radius: 14px;
-    border-left: 5px solid #1abad4;
-    box-shadow: 0 10px 24px rgba(24, 32, 46, 0.14);
+    padding: 6px 8px;
+    border-radius: 12px;
+    border-left: 4px solid #1abad4;
+    box-shadow: 0 8px 18px rgba(24, 32, 46, 0.14);
     z-index: 10000;
 }
 
 .viewer-toolbar button,
 .viewer-toolbar a {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
     background: #ffffff;
     color: #111111;
     border: none;
     padding: 0;
-    border-radius: 10px;
-    font-size: 17px;
+    border-radius: 9px;
+    font-size: 15px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1259,7 +1280,7 @@ body.ebook-view .container-fluid {
 .viewer-toolbar button i,
 .viewer-toolbar a i {
     color: #111111 !important;
-    font-size: 17px;
+    font-size: 15px;
     line-height: 1;
 }
 
@@ -1278,6 +1299,7 @@ body.ebook-view .container-fluid {
 
 body.viewer-modal-open .viewer-toolbar,
 body.viewer-modal-open .ebook-side-nav,
+body.viewer-modal-open .ebook-footer-bar,
 body.viewer-modal-open .ebook-bottom-controls,
 body.viewer-modal-open .report-issue-trigger {
     opacity: 0;
@@ -1402,6 +1424,10 @@ body.viewer-modal-open .report-issue-trigger {
         background: #000;
     }
 
+    #zoom-wrapper {
+        padding: 22px 8px 56px;
+    }
+
     #flipbook {
         max-width: 100%;
         max-height: 100%;
@@ -1450,6 +1476,10 @@ body.book-open .stf__parent {
     #viewer-wrapper {
         padding: 0;
         background: #e0e0e0;
+    }
+
+    #zoom-wrapper {
+        padding: 22px 8px 56px;
     }
 
     #flipbook {
@@ -1588,24 +1618,29 @@ body.book-open .stf__parent {
 @media (max-width: 768px) {
 
     .viewer-toolbar {
-        top: 12px;
+        top: 72px;
         right: 12px;
         left: auto;
         /* ❗ important */
         bottom: auto;
         /* ❗ important */
 
-        padding: 8px 10px;
-        gap: 6px;
-        border-radius: 12px;
+        padding: 6px 8px;
+        gap: 5px;
+        border-radius: 10px;
     }
 
     .viewer-toolbar button,
     .viewer-toolbar a {
-        width: 40px;
-        height: 40px;
+        width: 34px;
+        height: 34px;
         padding: 0;
-        font-size: 14px;
+        font-size: 13px;
+    }
+
+    .viewer-toolbar button i,
+    .viewer-toolbar a i {
+        font-size: 13px;
     }
 }
 
@@ -3021,10 +3056,28 @@ body.ebook-home #ebooksSection .book-info {
     }
 }
 
-.report-issue-trigger {
+.ebook-footer-bar {
     position: fixed;
-    right: 22px;
-    bottom: 22px;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 8px 20px;
+    /* 🔥 reduce height */
+    height: 56px;
+    /* 🔥 fixed height */
+
+    background: #2c2f3a;
+    color: #fff;
+
+    z-index: 100024;
+}
+
+.report-issue-trigger {
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -3033,10 +3086,11 @@ body.ebook-home #ebooksSection .book-info {
     background: rgba(255, 255, 255, 0.96);
     color: #26324f;
     padding: 10px 16px;
-    box-shadow: 0 18px 40px rgba(25, 38, 74, 0.18);
-    z-index: 10020;
+    box-shadow: 0 10px 24px rgba(25, 38, 74, 0.12);
     font-size: 0.92rem;
     font-weight: 600;
+    white-space: nowrap;
+    margin-left: auto;
 }
 
 .report-issue-trigger:hover {
@@ -3223,6 +3277,7 @@ body.ebook-home #ebooksSection .book-info {
 }
 
 @media (max-width: 767.98px) {
+
     html,
     body,
     body.ebook-view {
@@ -3240,45 +3295,10 @@ body.ebook-home #ebooksSection .book-info {
         overflow: visible !important;
     }
 
-    body.ebook-view .ebook-header-row {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100030;
-        padding: 10px 12px 8px;
-        background: rgba(230, 230, 230, 0.96);
-        backdrop-filter: blur(8px);
-        box-shadow: 0 4px 14px rgba(25, 32, 49, 0.08);
-    }
-
-    body.ebook-view .ebook-header-col {
-        display: block;
-        padding-right: 156px;
-    }
-
-    body.ebook-view .ebook-header-col .title {
-        margin-top: 8px !important;
-        margin-bottom: 0 !important;
-        font-size: clamp(1.4rem, 5vw, 2rem);
-        line-height: 1.05;
-        max-width: calc(100vw - 24px);
-        padding-right: 8px;
-        word-break: break-word;
-    }
 
     #viewer-wrapper {
-        padding-top: 16px;
-    }
-
-    .report-issue-trigger {
-        top: 58px;
-        right: 14px;
-        bottom: auto;
-        padding: 9px 14px;
-        font-size: 0.86rem;
-        max-width: calc(100vw - 28px);
-        z-index: 100025;
+        /* padding-top: 80px !important; */
+        padding: 52px 18px 120px !important;
     }
 
     .report-issue-modal .modal-body,
@@ -3292,9 +3312,9 @@ body.ebook-home #ebooksSection .book-info {
 .ebook-bottom-controls {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 18px;
-    margin-bottom: 6px;
+    gap: 14px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .ebook-page-pill {
@@ -3303,12 +3323,12 @@ body.ebook-home #ebooksSection .book-info {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 11px 18px;
+    padding: 6px 14px;
+    font-size: 14px;
     border-radius: 999px;
-    background: rgba(55, 54, 70, 0.92);
-    color: #ffffff;
-    box-shadow: 0 14px 28px rgba(28, 29, 43, 0.22);
-    font-size: 1rem;
+    background: rgba(34, 39, 54, 0.98);
+    color: #f4f7ff;
+    box-shadow: none;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
@@ -3317,18 +3337,16 @@ body.ebook-home #ebooksSection .book-info {
     opacity: 0.8;
 }
 
+.ebook-bottom-separator {
+    width: 2px;
+    height: 30px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+    flex: 0 0 auto;
+}
+
 .ebook-refresh-btn {
-    width: 50px;
-    height: 50px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: #4a4b5c;
-    font-size: 1.9rem;
-    line-height: 1;
+    display: none;
 }
 
 .ebook-refresh-btn:hover {
@@ -3336,15 +3354,16 @@ body.ebook-home #ebooksSection .book-info {
 }
 
 @media (max-width: 767.98px) {
+    .ebook-footer-bar {
+        width: calc(100vw - 16px);
+        padding: 10px 14px;
+        gap: 12px;
+        bottom: 0;
+        border-radius: 0;
+    }
+
     .ebook-bottom-controls {
-        position: fixed;
-        left: 50%;
-        bottom: 14px;
-        transform: translateX(-50%);
-        z-index: 100024;
-        margin-top: 0;
-        margin-bottom: 0;
-        gap: 8px;
+        gap: 12px;
     }
 
     .ebook-page-pill {
@@ -3353,14 +3372,18 @@ body.ebook-home #ebooksSection .book-info {
         font-size: 0.92rem;
     }
 
-    .ebook-refresh-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1.6rem;
+    .ebook-bottom-separator {
+        width: 2px;
+        height: 24px;
+    }
+
+    .report-issue-trigger {
+        padding: 6px 12px;
+        font-size: 13px;
     }
 
     .viewer-toolbar {
-        top: 12px;
+        top: 72px;
         right: 12px;
         left: auto;
         bottom: auto;
@@ -3386,4 +3409,153 @@ body.ebook-home #ebooksSection .book-info {
     .side-btn.next {
         right: 12px;
     }
+}
+
+@media (max-width: 768px) {
+    .ebook-footer-bar {
+        height: 50px;
+        padding: 6px 12px;
+    }
+
+    #viewer-wrapper {
+        padding-bottom: 70px !important;
+    }
+}
+
+
+.side-btn.prev {
+    left: 20px;
+}
+
+.side-btn.next {
+    right: 20px;
+}
+
+.ebook-side-nav {
+    position: fixed;
+    /* 🔥 change */
+    inset: 0;
+    z-index: 100050;
+    /* 🔥 above footer */
+}
+
+@media (max-width: 768px) {
+    .side-btn {
+        bottom: 80px;
+        /* footer mela */
+        top: auto;
+    }
+}
+
+body.ebook-view {
+    overflow-y: auto !important;
+}
+
+.ebook-title-card {
+    background: #ffffff;
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    max-width: 420px;
+}
+
+/* optional subtitle support */
+.ebook-title-card p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+body.ebook-view .ebook-header-row {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: auto;
+    /* 🔥 prevent stretch */
+    z-index: 10;
+
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border-bottom: 0;
+}
+
+body.ebook-view .ebook-header-col {
+    max-width: none;
+    padding: 0;
+}
+
+/* 🔥 TITLE CARD (FIXED) */
+.ebook-title-card {
+    background: #ffffff;
+    padding: 10px 16px;
+    /* 🔥 small card */
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #1abad4;
+    max-width: 260px;
+    /* 🔥 small width */
+    width: auto;
+
+    text-align: center;
+    /* 🔥 center text */
+}
+
+/* 🔥 TITLE TEXT */
+body.ebook-view .ebook-header-col .title {
+    margin: 0 !important;
+    font-size: 18px;
+    /* 🔥 smaller */
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    /* 🔥 center */
+}
+
+/* 🔥 FIX: Back button + title spacing */
+body.ebook-view .ebook-header-col .btn {
+    display: inline-block;
+    margin-bottom: 8px;
+    /* 🔥 space below button */
+}
+
+/* 🔥 Move title card slightly down */
+.ebook-title-card {
+    margin-top: 6px;
+    /* 🔥 avoid overlap */
+}
+
+
+
+
+body.ebook-view .ebook-header-row {
+    z-index: 100020 !important;
+    pointer-events: none;
+}
+
+body.ebook-view .ebook-header-col,
+body.ebook-view .ebook-header-col .btn,
+body.ebook-view .ebook-title-card {
+    position: relative;
+    z-index: 100021 !important;
+    pointer-events: auto;
+}
+
+/* 🔥 REMOVE BOTTOM GAP */
+body.ebook-view #viewer-wrapper {
+    padding-bottom: 70px !important;
+    /* only footer space */
+}
+
+body.ebook-view #zoom-wrapper {
+    padding-bottom: 20px !important;
+    /* reduce big gap */
+}
+
+.side-btn {
+    pointer-events: auto;
+}
+
+.side-btn {
+    pointer-events: auto;
 }

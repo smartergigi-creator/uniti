@@ -52,6 +52,7 @@ window.addEventListener("pageshow", (event) => {
     let isReady = false;
     let isInitRunning = false;
     let fileUploadInitialized = false;
+    let isClampingPage = false;
 
     let PAGE_RATIO = 700 / 440;
 
@@ -78,6 +79,7 @@ window.addEventListener("pageshow", (event) => {
         loadBook();
 
         setupZoomControls();
+        setupDownload();
         setupFullscreen();
         setupTOC(); // ✅ ADD THIS
         updateTOCLayout();
@@ -398,8 +400,16 @@ window.addEventListener("pageshow", (event) => {
                 lastNavigablePageIndex,
             );
 
-            if (current !== clamped) {
-                pageFlip.turnToPage(clamped);
+            if (current !== clamped && !isClampingPage) {
+                isClampingPage = true;
+
+                window.requestAnimationFrame(() => {
+                    try {
+                        pageFlip?.turnToPage(clamped);
+                    } finally {
+                        isClampingPage = false;
+                    }
+                });
             }
 
             syncViewerState();
@@ -540,6 +550,51 @@ window.addEventListener("pageshow", (event) => {
                 window.location.reload();
             };
         }
+    }
+
+    function setupDownload() {
+        const downloadBtn = document.getElementById("downloadEbook");
+
+        if (!downloadBtn) return;
+
+        downloadBtn.onclick = async (event) => {
+            event.preventDefault();
+
+            const fileUrl =
+                downloadBtn.dataset.downloadUrl || downloadBtn.getAttribute("href");
+            const fileName =
+                downloadBtn.dataset.downloadName ||
+                downloadBtn.getAttribute("download") ||
+                "ebook.pdf";
+
+            if (!fileUrl) return;
+
+            try {
+                const response = await fetch(fileUrl, {
+                    credentials: "same-origin",
+                });
+
+                if (!response.ok) {
+                    throw new Error("Download failed");
+                }
+
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const tempLink = document.createElement("a");
+
+                tempLink.href = blobUrl;
+                tempLink.download = fileName;
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                tempLink.remove();
+
+                window.setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 1000);
+            } catch (error) {
+                window.location.href = fileUrl;
+            }
+        };
     }
 
     /* ===============================

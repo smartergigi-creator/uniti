@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ebook;
+use App\Support\WatermarkedPdfDownloader;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -148,6 +149,61 @@ public function view($token)
             ->get(['id', 'name', 'email']);
     }
 
-    return view('ebook.flipbook', compact('ebook', 'reportRecipients'));
+    $downloadUrl = route('ebook.share.download', $token);
+
+    return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
+}
+
+public function download($token, WatermarkedPdfDownloader $downloader)
+{
+    $ebook = Ebook::where('share_token', $token)
+        ->where('share_enabled', 1)
+        ->first();
+
+    if (!$ebook) {
+        abort(404, 'Shared ebook not found');
+    }
+
+    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+        abort(403, 'Share link expired');
+    }
+
+    if (
+        $ebook->max_views !== null &&
+        (int) $ebook->max_views > 0 &&
+        $ebook->current_views >= $ebook->max_views
+    ) {
+        abort(403, 'Share limit reached');
+    }
+
+    $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+    abort_unless(is_file($pdfPath), 404, 'PDF file not found');
+
+    $ebook->increment('current_views');
+
+    $payload = $downloader->build(
+        $pdfPath,
+        Str::slug($ebook->title ?: 'ebook') . '.pdf',
+        public_path('images/logo.png'),
+        'UNITI'
+    );
+
+    return response($payload['content'], 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+    ]);
+}
+
+protected function resolvePdfPath(string $pdfPath): string
+{
+    $rootFolder = config('app.file_root');
+
+    if ($rootFolder === 'public') {
+        return base_path('public/' . ltrim($pdfPath, '/'));
+    }
+
+    return base_path('../public_html/' . ltrim($pdfPath, '/'));
 }
 }

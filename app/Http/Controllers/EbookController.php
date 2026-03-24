@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use App\Models\Ebook;
 use App\Models\EbookIssueReport;
 use App\Models\Category;
+use App\Support\WatermarkedPdfDownloader;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 
@@ -188,7 +189,37 @@ class EbookController extends Controller
             abort(404, 'PDF file not found');
         }
 
-        return view('ebook.flipbook', compact('ebook', 'reportRecipients'));
+        $downloadUrl = route('ebook.download', $ebook->slug);
+
+        return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
+    }
+
+    public function downloadWatermarked($slug, WatermarkedPdfDownloader $downloader)
+    {
+        $ebook = Ebook::where('slug', $slug)->firstOrFail();
+        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+        abort_unless(is_file($pdfPath), 404, 'PDF file not found');
+
+        $payload = $downloader->build(
+            $pdfPath,
+            Str::slug($ebook->title ?: 'ebook') . '.pdf',
+            public_path('images/logo.png'),
+            'UNITI'
+        );
+
+        return response($payload['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
+    }
+
+    public function download($id, WatermarkedPdfDownloader $downloader)
+    {
+        $ebook = Ebook::findOrFail($id);
+
+        return $this->downloadWatermarked($ebook->slug, $downloader);
     }
 
     public function reportIssue(Request $request, $id)
@@ -287,5 +318,16 @@ class EbookController extends Controller
     public function viewApi($id)
     {
         return Ebook::findOrFail($id);
+    }
+
+    protected function resolvePdfPath(string $pdfPath): string
+    {
+        $rootFolder = config('app.file_root');
+
+        if ($rootFolder === 'public') {
+            return base_path('public/' . ltrim($pdfPath, '/'));
+        }
+
+        return base_path('../public_html/' . ltrim($pdfPath, '/'));
     }
 }

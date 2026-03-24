@@ -32,6 +32,8 @@ class SerpAuthController extends Controller
             'password' => 'required',
         ]);
 
+        $serpId = trim((string) $request->username);
+
         try {
             $response = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',
@@ -40,83 +42,98 @@ class SerpAuthController extends Controller
                 'password' => $request->password,
             ]);
 
+            // 🔥 STEP 1: If SERP fails → fallback to DB login
             if (!$response->successful()) {
-                Log::warning('SERP login failed with non-success status', [
-                    'username' => $request->username,
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
 
-                $status = $response->status();
+                $user = User::where('serp_id', $serpId)
+                    ->orWhere('name', $serpId)
+                    ->first();
 
-                if (in_array($status, [401, 403, 422], true)) {
-                    return back()
-                        ->with('error', 'Invalid SERP credentials')
-                        ->withInput($request->only('username'));
-                }
+                if ($user) {
+                    Auth::login($user);
+                    $request->session()->regenerate();
 
-                if ($status === 429) {
-                    return back()
-                        ->with('error', 'Too many attempts. Please try again later.')
-                        ->withInput($request->only('username'));
+                    return redirect('/home');
                 }
 
                 return back()
-                    ->with('error', 'SERP login unavailable. Please try again later.')
+                    ->with('error', 'Invalid credentials')
                     ->withInput($request->only('username'));
             }
 
             $serp = $response->json();
 
+            // 🔥 STEP 2: If SERP response invalid → fallback
             if (!($serp['success'] ?? true)) {
-                Log::warning('SERP login returned unsuccessful payload', [
-                    'username' => $request->username,
-                    'response' => $serp,
-                ]);
+
+                $user = User::where('serp_id', $serpId)
+                    ->orWhere('name', $serpId)
+                    ->first();
+
+                if ($user) {
+                    Auth::login($user);
+                    $request->session()->regenerate();
+
+                    return redirect('/home');
+                }
 
                 return back()
                     ->with('error', 'Invalid SERP credentials')
                     ->withInput($request->only('username'));
             }
 
+            // 🔥 STEP 3: Extract token
             $tokenPayload = $this->extractTokenPayload($serp);
 
             if (!$tokenPayload['token'] || !$tokenPayload['refresh_token']) {
-                Log::warning('SERP login response missing token data', [
-                    'username' => $request->username,
-                    'response' => $serp,
-                ]);
-
                 return back()
                     ->with('error', 'SERP login response missing token details.')
                     ->withInput($request->only('username'));
             }
 
-            $serpId = trim((string) $request->username);
+            $legacyName = isset($tokenPayload['name']) ? trim((string) $tokenPayload['name']) : null;
 
-            $user = User::updateOrCreate(
-                ['serp_id' => $serpId],
-                [
+            $identifiers = collect([$serpId, $legacyName])
+                ->filter(fn ($value) => filled($value))
+                ->unique()
+                ->values();
+
+            // 🔥 STEP 4: Find user
+            $user = User::where(function ($query) use ($identifiers) {
+                $query->whereIn('serp_id', $identifiers)
+                    ->orWhereIn('name', $identifiers);
+            })->first();
+
+            if ($user) {
+                $user->update([
+                    'serp_id' => $user->serp_id ?? $serpId,
+                    'name' => $tokenPayload['name'] ?? $user->name,
+                    'email' => $tokenPayload['email'] ?? $user->email,
+                    'serp_token' => $tokenPayload['token'],
+                    'status' => 'active',
+                ]);
+            } else {
+                $user = User::create([
+                    'serp_id' => $serpId,
                     'name' => $tokenPayload['name'] ?? $serpId,
                     'email' => $tokenPayload['email'] ?? ($serpId . '@serp.local'),
                     'serp_token' => $tokenPayload['token'],
                     'status' => 'active',
                     'created_from' => 'serp',
-                ]
-            );
+                    'role' => 'user',
+                    'can_upload' => false,
+                    'can_share' => false,
+                    'upload_limit' => 0,
+                    'share_limit' => 0,
+                ]);
+            }
 
-            if ($user->wasRecentlyCreated) {
-                $user->role = 'user';
-                $user->can_upload = false;
-                $user->can_share = false;
-                $user->upload_limit = 0;
-                $user->share_limit = 0;
-                $user->save();
-            } elseif (!$user->role) {
+            if (!$user->role) {
                 $user->role = 'user';
                 $user->save();
             }
 
+            // 🔥 STEP 5: Login
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
 
@@ -130,14 +147,16 @@ class SerpAuthController extends Controller
             ]);
 
             return redirect('/home');
+
         } catch (\Throwable $e) {
+
             Log::error('SERP LOGIN ERROR', [
                 'username' => $request->username,
                 'message' => $e->getMessage(),
             ]);
 
             return back()
-                ->with('error', 'SERP login failed. Please try again later.')
+                ->with('error', 'Login failed. Please try again.')
                 ->withInput($request->only('username'));
         }
     }

@@ -17,13 +17,16 @@
         </div>
 
         <div class="row ebook-header-row">
-            <div class="col-12 text-start py-2 ebook-header-col">
-                <a href="{{ url('/home#ebooksSection') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
-                    <i class="bi bi-arrow-left"></i>Back
+            <div class="col-12 ebook-header-col">
+
+                <a id="ebookBackButton" href="{{ url('/home#ebooksSection') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3 mb-2">
+                    <i class="bi bi-arrow-left"></i> Back
                 </a>
 
+                <div class="ebook-title-card">
+                    <h2 class="title mb-0">{{ $ebook->title }}</h2>
+                </div>
 
-                <h2 class="title mb-0">{{ $ebook->title }}</h2>
             </div>
         </div>
 
@@ -32,6 +35,10 @@
                 <div id="viewer-wrapper" class="mb-3">
 
                     <div class="viewer-toolbar position-absolute top-0 end-0 m-3 d-flex gap-2">
+                        <a id="downloadEbook" href="{{ $downloadUrl }}" class="btn btn-light btn-sm"
+                            aria-label="Download ebook">
+                            <i class="bi bi-download"></i>
+                        </a>
 
                         <button id="zoomIn" class="btn btn-light btn-sm">
                             <i class="bi bi-zoom-in"></i>
@@ -51,7 +58,6 @@
 
                     </div>
 
-
                     <div id="zoom-wrapper" class="position-relative">
                         <div id="ebook-scale">
                             <div id="flipbook">
@@ -68,34 +74,41 @@
                         </div>
                     </div>
 
-                    <div class="ebook-bottom-controls" aria-label="Viewer controls">
-                        <div class="ebook-page-pill">
-                            <span id="ebookCurrentPage">1</span>
-                            <span class="ebook-page-divider">/</span>
-                            <span id="ebookTotalPages">1</span>
+                    <div class="ebook-footer-bar" aria-label="Viewer footer controls">
+                        <div class="ebook-bottom-controls" aria-label="Viewer controls">
+                            <div class="ebook-page-pill">
+                                <span id="ebookCurrentPage">1</span>
+                                <span class="ebook-page-divider">/</span>
+                                <span id="ebookTotalPages">1</span>
+                            </div>
+
+                            <span class="ebook-bottom-separator" aria-hidden="true"></span>
+
+                            <button type="button" class="ebook-refresh-btn" id="refreshViewer" aria-label="Refresh viewer">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
                         </div>
 
-                        <button type="button" class="ebook-refresh-btn" id="refreshViewer"
-                            aria-label="Refresh viewer">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
+                        @if ($canReportIssue)
+                            <button type="button" class="report-issue-trigger" data-bs-toggle="modal"
+                                data-bs-target="#reportIssueModal">
+                                <span class="report-issue-icon">
+                                    <img src="{{ asset('images/report.png') }}" alt="Report">
+                                </span>
+                                <span>Report Issue</span>
+                            </button>
+                        @endif
                     </div>
-
                 </div>
             </div>
         </div>
+    </div>
+    </div>
 
-        <audio id="flipSound" src="{{ asset('sound/page-flip-12.wav') }}" preload="auto"></audio>
+    <audio id="flipSound" src="{{ asset('sound/page-flip-12.wav') }}" preload="auto"></audio>
     </div>
 
     @if ($canReportIssue)
-        <button type="button" class="report-issue-trigger" data-bs-toggle="modal" data-bs-target="#reportIssueModal">
-            <span class="report-issue-icon">
-                <img src="{{ asset('images/report.png') }}" alt="Report">
-            </span>
-            <span>Report Issue</span>
-        </button>
-
         <div class="modal fade" id="reportIssueModal" tabindex="-1" aria-labelledby="reportIssueModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -192,6 +205,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
         (function() {
+            const backButton = document.getElementById('ebookBackButton');
+
+            if (backButton) {
+                backButton.addEventListener('click', () => {
+                    window.setTimeout(() => {
+                        if (document.visibilityState === 'visible' &&
+                            window.location.pathname.startsWith('/ebook/')) {
+                            window.location.assign(backButton.href);
+                        }
+                    }, 150);
+                });
+            }
+
             const flipbook = document.getElementById('flipbook');
             const pdfUrl = @json(asset($ebook->pdf_path));
             const loadingText = document.getElementById('ebookLoadingText');
@@ -358,7 +384,8 @@
                 option.addEventListener('click', () => {
                     userIdInput.value = option.dataset.userId || '';
                     selectedName.textContent = option.dataset.userName || 'Select user...';
-                    selectedEmail.textContent = option.dataset.userEmail || 'Choose a recipient from the list';
+                    selectedEmail.textContent = option.dataset.userEmail ||
+                        'Choose a recipient from the list';
                     feedback.textContent = '';
                     feedback.className = 'small mt-2';
 
