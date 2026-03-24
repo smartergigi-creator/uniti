@@ -566,6 +566,9 @@ window.addEventListener("pageshow", (event) => {
                 downloadBtn.dataset.downloadName ||
                 downloadBtn.getAttribute("download") ||
                 "ebook.pdf";
+            const safeFileName =
+                fileName.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() ||
+                "ebook.pdf";
 
             if (!fileUrl) return;
 
@@ -583,7 +586,7 @@ window.addEventListener("pageshow", (event) => {
                 const tempLink = document.createElement("a");
 
                 tempLink.href = blobUrl;
-                tempLink.download = fileName;
+                tempLink.download = safeFileName;
                 document.body.appendChild(tempLink);
                 tempLink.click();
                 tempLink.remove();

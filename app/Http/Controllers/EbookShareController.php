@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ebook;
-use App\Support\WatermarkedPdfDownloader;
 use App\Models\User;
+use App\Support\WatermarkedPdfDownloader;
 use Illuminate\Support\Str;
 
 class EbookShareController extends Controller
@@ -99,111 +99,164 @@ class EbookShareController extends Controller
         }
     }
 
-public function view($token)
-{
-    $ebook = Ebook::where('share_token', $token)
-        ->where('share_enabled', 1)
-        ->first();
-    $reportRecipients = collect();
+    public function view($token)
+    {
+        $ebook = Ebook::where('share_token', $token)
+            ->where('share_enabled', 1)
+            ->first();
+        $reportRecipients = collect();
 
-    if (!$ebook) {
-        return view('ebook/errors.share-invalid');
+        if (!$ebook) {
+            return view('ebook/errors.share-invalid');
+        }
+
+        if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+            return view('ebook/errors.share-expired');
+        }
+
+        if (
+            $ebook->max_views !== null &&
+            (int) $ebook->max_views > 0 &&
+            $ebook->current_views >= $ebook->max_views
+        ) {
+            return view('ebook/errors.limit-reached');
+        }
+
+        $ebook->increment('current_views');
+
+        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+        if (!file_exists($pdfPath)) {
+            return view('ebook/errors.share-invalid');
+        }
+
+        if (auth()->check()) {
+            $reportRecipients = User::query()
+                ->where('status', 'active')
+                ->whereKeyNot(auth()->id())
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']);
+        }
+
+        $downloadUrl = route('ebook.share.download', $token);
+
+        return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
     }
 
-    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
-        return view('ebook/errors.share-expired');
+    public function download($token, WatermarkedPdfDownloader $downloader)
+    {
+        $ebook = Ebook::where('share_token', $token)
+            ->where('share_enabled', 1)
+            ->first();
+
+        if (!$ebook) {
+            abort(404, 'Shared ebook not found');
+        }
+
+        if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+            abort(403, 'Share link expired');
+        }
+
+        if (
+            $ebook->max_views !== null &&
+            (int) $ebook->max_views > 0 &&
+            $ebook->current_views >= $ebook->max_views
+        ) {
+            abort(403, 'Share limit reached');
+        }
+
+        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+        abort_unless(is_file($pdfPath), 404, 'PDF file not found');
+
+        $ebook->increment('current_views');
+
+        $payload = $downloader->build(
+            $pdfPath,
+            $this->downloadFileName($ebook),
+            public_path('images/logo.png'),
+            'UNITI'
+        );
+
+        return response($payload['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        ]);
     }
 
-    if (
-        $ebook->max_views !== null &&
-        (int) $ebook->max_views > 0 &&
-        $ebook->current_views >= $ebook->max_views
-    ) {
-        return view('ebook/errors.limit-reached');
+    protected function resolvePdfPath(string $pdfPath): string
+    {
+        $relativePath = ltrim($pdfPath, '/\\');
+
+        foreach ($this->fileRootCandidates() as $rootPath) {
+            $candidate = $rootPath . DIRECTORY_SEPARATOR . $relativePath;
+
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $this->resolveManagedPath($relativePath);
     }
 
-    $ebook->increment('current_views');
+    protected function downloadFileName(Ebook $ebook): string
+    {
+        $name = $ebook->file_title
+            ?: $ebook->title
+            ?: pathinfo($ebook->pdf_path, PATHINFO_FILENAME)
+            ?: 'ebook';
 
-    // 🔥 IMPORTANT FIX — Check inside public_html
-    // $pdfPath = base_path('../public_html/' . $ebook->pdf_path);
+        $name = trim(preg_replace('/[\\\\\\/:*?"<>|]+/', ' ', $name) ?? '');
+        $name = preg_replace('/\s+/', ' ', $name) ?? $name;
 
-    $rootFolder = config('app.file_root');
-
-    if ($rootFolder == 'public') {
-        $pdfPath = base_path("public/" . $ebook->pdf_path);
-    } else {
-        $pdfPath = base_path("../public_html/" . $ebook->pdf_path);
+        return ($name !== '' ? $name : 'ebook') . '.pdf';
     }
 
+    protected function resolveManagedPath(string $relativePath): string
+    {
+        $relativePath = ltrim($relativePath, '/\\');
 
+        foreach ($this->fileRootCandidates() as $rootPath) {
+            if (is_dir($rootPath)) {
+                return $rootPath . DIRECTORY_SEPARATOR . $relativePath;
+            }
+        }
 
-    if (!file_exists($pdfPath)) {
-        return view('ebook/errors.share-invalid');
+        return $this->fileRootCandidates()[0] . DIRECTORY_SEPARATOR . $relativePath;
     }
 
-    if (auth()->check()) {
-        $reportRecipients = User::query()
-            ->where('status', 'active')
-            ->whereKeyNot(auth()->id())
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+    protected function fileRootCandidates(): array
+    {
+        $rootFolder = trim((string) config('app.file_root', 'public'));
+
+        if ($rootFolder === '') {
+            $rootFolder = 'public';
+        }
+
+        $normalizedRoot = trim($rootFolder, '/\\');
+        $candidates = [];
+
+        if ($this->isAbsolutePath($rootFolder)) {
+            $candidates[] = rtrim($rootFolder, '/\\');
+        } else {
+            if ($normalizedRoot === 'public') {
+                $candidates[] = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
+                $candidates[] = public_path();
+            }
+
+            $candidates[] = base_path($normalizedRoot);
+            $candidates[] = dirname(base_path()) . DIRECTORY_SEPARATOR . $normalizedRoot;
+        }
+
+        return array_values(array_unique(array_map(
+            fn ($path) => rtrim($path, '/\\'),
+            array_filter($candidates)
+        )));
     }
 
-    $downloadUrl = route('ebook.share.download', $token);
-
-    return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
-}
-
-public function download($token, WatermarkedPdfDownloader $downloader)
-{
-    $ebook = Ebook::where('share_token', $token)
-        ->where('share_enabled', 1)
-        ->first();
-
-    if (!$ebook) {
-        abort(404, 'Shared ebook not found');
+    protected function isAbsolutePath(string $path): bool
+    {
+        return preg_match('/^(?:[A-Za-z]:[\\\\\\/]|[\\\\\\/]{2}|\\/)/', $path) === 1;
     }
-
-    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
-        abort(403, 'Share link expired');
-    }
-
-    if (
-        $ebook->max_views !== null &&
-        (int) $ebook->max_views > 0 &&
-        $ebook->current_views >= $ebook->max_views
-    ) {
-        abort(403, 'Share limit reached');
-    }
-
-    $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
-
-    abort_unless(is_file($pdfPath), 404, 'PDF file not found');
-
-    $ebook->increment('current_views');
-
-    $payload = $downloader->build(
-        $pdfPath,
-        Str::slug($ebook->title ?: 'ebook') . '.pdf',
-        public_path('images/logo.png'),
-        'UNITI'
-    );
-
-    return response($payload['content'], 200, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
-        'Cache-Control' => 'no-store, no-cache, must-revalidate',
-    ]);
-}
-
-protected function resolvePdfPath(string $pdfPath): string
-{
-    $rootFolder = config('app.file_root');
-
-    if ($rootFolder === 'public') {
-        return base_path('public/' . ltrim($pdfPath, '/'));
-    }
-
-    return base_path('../public_html/' . ltrim($pdfPath, '/'));
-}
 }

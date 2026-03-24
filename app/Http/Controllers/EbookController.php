@@ -102,13 +102,7 @@ class EbookController extends Controller
                 // $rootFolder = config('app.file_root');
                 // $basePath = base_path("../{$rootFolder}/ebooks/$folder");//live
                 // $basePath = base_path("{$rootFolder}/ebooks/$folder");//local
-                $rootFolder = config('app.file_root');
-
-                if ($rootFolder == 'public') {
-                    $basePath = base_path("public/ebooks/$folder");
-                } else {
-                    $basePath = base_path("../public_html/ebooks/$folder");
-                }
+                $basePath = $this->resolveManagedPath("ebooks/$folder");
 
                 if (!File::exists($basePath)) {
                     File::makeDirectory($basePath, 0755, true);
@@ -177,14 +171,8 @@ class EbookController extends Controller
                 ->get(['id', 'name', 'email']);
         }
 
-        $rootFolder = config('app.file_root');
-        // $pdfPath = base_path("../{$rootFolder}/" . $ebook->pdf_path);
+        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        if ($rootFolder == 'public') {
-        $pdfPath = base_path("public/" . $ebook->pdf_path);
-        } else {
-        $pdfPath = base_path("../public_html/" . $ebook->pdf_path);
-        }
         if (!file_exists($pdfPath)) {
             abort(404, 'PDF file not found');
         }
@@ -203,7 +191,7 @@ class EbookController extends Controller
 
         $payload = $downloader->build(
             $pdfPath,
-            Str::slug($ebook->title ?: 'ebook') . '.pdf',
+            $this->downloadFileName($ebook),
             public_path('images/logo.png'),
             'UNITI'
         );
@@ -289,8 +277,7 @@ class EbookController extends Controller
                     ->delete();
             }
 
-            $rootFolder = config('app.file_root');
-            $folderPath = base_path("../{$rootFolder}/ebooks/{$ebook->folder_path}");
+            $folderPath = $this->resolveManagedPath("ebooks/{$ebook->folder_path}");
 
             if (File::exists($folderPath)) {
                 File::deleteDirectory($folderPath);
@@ -322,12 +309,76 @@ class EbookController extends Controller
 
     protected function resolvePdfPath(string $pdfPath): string
     {
-        $rootFolder = config('app.file_root');
+        $relativePath = ltrim($pdfPath, '/\\');
 
-        if ($rootFolder === 'public') {
-            return base_path('public/' . ltrim($pdfPath, '/'));
+        foreach ($this->fileRootCandidates() as $rootPath) {
+            $candidate = $rootPath . DIRECTORY_SEPARATOR . $relativePath;
+
+            if (is_file($candidate)) {
+                return $candidate;
+            }
         }
 
-        return base_path('../public_html/' . ltrim($pdfPath, '/'));
+        return $this->resolveManagedPath($relativePath);
+    }
+
+    protected function downloadFileName(Ebook $ebook): string
+    {
+        $name = $ebook->file_title
+            ?: $ebook->title
+            ?: pathinfo($ebook->pdf_path, PATHINFO_FILENAME)
+            ?: 'ebook';
+
+        $name = trim(preg_replace('/[\\\\\\/:*?"<>|]+/', ' ', $name) ?? '');
+        $name = preg_replace('/\s+/', ' ', $name) ?? $name;
+
+        return ($name !== '' ? $name : 'ebook') . '.pdf';
+    }
+
+    protected function resolveManagedPath(string $relativePath): string
+    {
+        $relativePath = ltrim($relativePath, '/\\');
+
+        foreach ($this->fileRootCandidates() as $rootPath) {
+            if (is_dir($rootPath)) {
+                return $rootPath . DIRECTORY_SEPARATOR . $relativePath;
+            }
+        }
+
+        return $this->fileRootCandidates()[0] . DIRECTORY_SEPARATOR . $relativePath;
+    }
+
+    protected function fileRootCandidates(): array
+    {
+        $rootFolder = trim((string) config('app.file_root', 'public'));
+
+        if ($rootFolder === '') {
+            $rootFolder = 'public';
+        }
+
+        $normalizedRoot = trim($rootFolder, '/\\');
+        $candidates = [];
+
+        if ($this->isAbsolutePath($rootFolder)) {
+            $candidates[] = rtrim($rootFolder, '/\\');
+        } else {
+            if ($normalizedRoot === 'public') {
+                $candidates[] = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html';
+                $candidates[] = public_path();
+            }
+
+            $candidates[] = base_path($normalizedRoot);
+            $candidates[] = dirname(base_path()) . DIRECTORY_SEPARATOR . $normalizedRoot;
+        }
+
+        return array_values(array_unique(array_map(
+            fn ($path) => rtrim($path, '/\\'),
+            array_filter($candidates)
+        )));
+    }
+
+    protected function isAbsolutePath(string $path): bool
+    {
+        return preg_match('/^(?:[A-Za-z]:[\\\\\\/]|[\\\\\\/]{2}|\\/)/', $path) === 1;
     }
 }

@@ -36,6 +36,7 @@
 
                     <div class="viewer-toolbar position-absolute top-0 end-0 m-3 d-flex gap-2">
                         <a id="downloadEbook" href="{{ $downloadUrl }}" class="btn btn-light btn-sm"
+                            data-download-name="{{ trim(($ebook->file_title ?: $ebook->title ?: 'ebook')) . '.pdf' }}"
                             aria-label="Download ebook">
                             <i class="bi bi-download"></i>
                         </a>
