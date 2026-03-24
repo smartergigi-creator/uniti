@@ -203,16 +203,16 @@ class EbookController extends Controller
         ]);
     }
 
-    public function download($id, WatermarkedPdfDownloader $downloader)
+    public function download($id)
     {
         $ebook = Ebook::findOrFail($id);
         $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        try {
-            return $this->downloadWatermarked($ebook->slug, $downloader);
-        } catch (\Throwable $e) {
-            return response()->download($pdfPath, $this->downloadFileName($ebook));
+        if (!file_exists($pdfPath)) {
+            abort(404, 'File not found');
         }
+
+        return response()->download($pdfPath, $this->downloadFileName($ebook));
     }
 
     public function reportIssue(Request $request, $id)
