@@ -171,18 +171,22 @@ class EbookShareController extends Controller
 
         $ebook->increment('current_views');
 
-        $payload = $downloader->build(
-            $pdfPath,
-            $this->downloadFileName($ebook),
-            public_path('images/logo.png'),
-            'UNITI'
-        );
+        try {
+            $payload = $downloader->build(
+                $pdfPath,
+                $this->downloadFileName($ebook),
+                public_path('images/logo.png'),
+                'UNITI'
+            );
 
-        return response($payload['content'], 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate',
-        ]);
+            return response($payload['content'], 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->download($pdfPath, $this->downloadFileName($ebook));
+        }
     }
 
     protected function resolvePdfPath(string $pdfPath): string

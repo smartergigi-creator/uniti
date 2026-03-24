@@ -206,8 +206,13 @@ class EbookController extends Controller
     public function download($id, WatermarkedPdfDownloader $downloader)
     {
         $ebook = Ebook::findOrFail($id);
+        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        return $this->downloadWatermarked($ebook->slug, $downloader);
+        try {
+            return $this->downloadWatermarked($ebook->slug, $downloader);
+        } catch (\Throwable $e) {
+            return response()->download($pdfPath, $this->downloadFileName($ebook));
+        }
     }
 
     public function reportIssue(Request $request, $id)
