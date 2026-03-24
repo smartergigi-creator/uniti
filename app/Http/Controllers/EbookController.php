@@ -311,6 +311,12 @@ class EbookController extends Controller
     {
         $relativePath = ltrim($pdfPath, '/\\');
 
+        $livePath = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . $relativePath;
+
+        if (is_file($livePath)) {
+            return $livePath;
+        }
+
         foreach ($this->fileRootCandidates() as $rootPath) {
             $candidate = $rootPath . DIRECTORY_SEPARATOR . $relativePath;
 
@@ -319,7 +325,7 @@ class EbookController extends Controller
             }
         }
 
-        return $this->resolveManagedPath($relativePath);
+        abort(404, 'File not found: ' . $relativePath);
     }
 
     protected function downloadFileName(Ebook $ebook): string
