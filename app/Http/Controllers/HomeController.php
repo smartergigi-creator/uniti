@@ -261,4 +261,13 @@ class HomeController extends Controller
             'todayCount'
         ));
     }
+
+    public function websites()
+    {
+        $websiteLinks = collect(config('websites.links', []))
+            ->filter()
+            ->values();
+
+        return view('website.index', compact('websiteLinks'));
+    }
 }

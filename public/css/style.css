@@ -97,6 +97,253 @@ body.ebook-issues {
         linear-gradient(180deg, #f4fbff 0%, #eef5ff 100%);
 }
 
+body.website-page {
+    background:
+        linear-gradient(135deg, #dff5ff 0%, #edf8ff 18%, #f7fbff 18%, #f7fbff 100%);
+    overflow-x: hidden;
+}
+
+body.website-page main {
+    padding-top: 6.1rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.website-content {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    margin: 0 auto;
+    padding: 0.8rem 1rem;
+}
+
+.website-hero {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.website-kicker {
+    display: inline-block;
+    padding: 0.32rem 0.68rem;
+    border-radius: 999px;
+    background: rgba(20, 145, 214, 0.12);
+    color: #0f7bad;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+}
+
+.website-hero h1 {
+    margin: 0 0 0.2rem;
+    font-size: clamp(1.8rem, 2.6vw, 2.5rem);
+    color: #163b5b;
+    font-weight: 800;
+}
+
+.website-hero p {
+    margin: 0;
+    color: #67829c;
+    font-size: 0.96rem;
+}
+
+.website-summary-card {
+    min-width: 150px;
+    padding: 0.8rem 0.95rem;
+    border-radius: 18px;
+    background: linear-gradient(160deg, #1492d6, #1e6ee7);
+    color: #fff;
+    box-shadow: 0 14px 28px rgba(30, 110, 231, 0.22);
+}
+
+.website-summary-card span {
+    display: block;
+    font-size: 0.74rem;
+    opacity: 0.88;
+    margin-bottom: 0.25rem;
+    color: inherit;
+}
+
+.website-summary-card strong {
+    font-size: 1.55rem;
+    font-weight: 800;
+}
+
+.website-panel {
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(45, 121, 177, 0.1);
+    box-shadow: 0 12px 28px rgba(25, 84, 126, 0.08);
+    overflow: hidden;
+}
+
+.website-panel-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.95rem 1rem 0.75rem;
+    border-bottom: 1px solid rgba(45, 121, 177, 0.08);
+    flex-wrap: wrap;
+}
+
+.website-panel-head h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: #173d5d;
+    font-weight: 700;
+}
+
+.website-panel-head p {
+    margin: 0.25rem 0 0;
+    color: #6f879d;
+    font-size: 0.92rem;
+}
+
+.website-table-wrap {
+    overflow-x: auto;
+}
+
+.website-table {
+    min-width: 500px;
+    table-layout: fixed;
+}
+
+.website-table thead th {
+    padding: 0.72rem 0.78rem;
+    background: #edf7ff;
+    color: #6c859d;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(45, 121, 177, 0.1);
+}
+
+.website-table tbody td {
+    padding: 0.72rem 0.78rem;
+    color: #26435b;
+    border-bottom: 1px solid rgba(45, 121, 177, 0.08);
+    vertical-align: middle;
+}
+
+.website-table th:first-child,
+.website-table td:first-child {
+    width: 26px;
+}
+
+.website-table th:nth-child(2),
+.website-table td:nth-child(2) {
+    width: 31%;
+}
+
+.website-table th:nth-child(3),
+.website-table td:nth-child(3) {
+    width: 24%;
+}
+
+.website-table th:last-child,
+.website-table td:last-child {
+    width: 86px;
+    padding-left: 0.5rem;
+    padding-right: 1.4rem;
+}
+
+.website-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
+}
+
+.website-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1695d8, #5ec8ff);
+    box-shadow: 0 0 0 5px rgba(22, 149, 216, 0.12);
+    flex: 0 0 auto;
+}
+
+.website-name-cell strong,
+.website-name-cell small {
+    display: block;
+}
+
+.website-name-cell strong {
+    color: #173d5d;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.website-name-cell small {
+    color: #8197ac;
+    margin-top: 0.15rem;
+    font-size: 0.82rem;
+}
+
+.website-link-text {
+    color: #167cb7;
+    text-decoration: none;
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.92rem;
+}
+
+.website-link-text:hover {
+    color: #0d628f;
+}
+
+.website-open-btn {
+    border-radius: 999px;
+    padding: 0.28rem 0.56rem;
+    background: linear-gradient(135deg, #1691d5, #1f6fe7);
+    color: #fff;
+    border: none;
+    box-shadow: 0 8px 18px rgba(31, 111, 231, 0.18);
+    font-size: 0.74rem;
+    font-weight: 600;
+    margin-left: 0.35rem;
+}
+
+.website-open-btn:hover,
+.website-open-btn:focus {
+    color: #fff;
+    background: linear-gradient(135deg, #1177b0, #185fd0);
+}
+
+@media (max-width: 768px) {
+    body.website-page main {
+        padding-top: 5.5rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    .website-content {
+        padding: 0.75rem;
+    }
+
+    .website-panel-head {
+        padding: 0.9rem;
+    }
+
+    .website-summary-card {
+        min-width: 100%;
+    }
+
+    .website-table {
+        min-width: 560px;
+    }
+}
+
 body.ebook-issues main {
     padding-top: 1.25rem !important;
     padding-bottom: 3rem !important;
@@ -3556,6 +3803,3 @@ body.ebook-view #zoom-wrapper {
     pointer-events: auto;
 }
 
-.side-btn {
-    pointer-events: auto;
-}

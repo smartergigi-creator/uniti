@@ -48,6 +48,8 @@ Route::post('/logout', [SerpAuthController::class, 'logout'])
 Route::middleware(['auth','serp.auth','serp.refresh','nocache'])->group(function () {
 
     Route::get('/home', [HomeController::class, 'userHome']);
+    Route::get('/websites', [HomeController::class, 'websites'])
+        ->name('websites.index');
     Route::get('/reported-issues', [HomeController::class, 'reportedIssues'])
         ->name('reported-issues.index');
 

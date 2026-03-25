@@ -79,26 +79,6 @@
                         },
                     ]);
                 }
-                $websiteLinks = [
-                    'blogs.tourlytours.com',
-                    'asi.com.ph',
-                    'my.pesocard.ph',
-                    'ustdi.com.ph',
-                    'my.bisita.com.ph',
-                    'ecapp.uniti.com.ph',
-                    'ikak.net',
-                    'murakami.com.ph',
-                    'autogate.net.ph',
-                    'powerboard.com.ph',
-                    'smartertrack.com.ph',
-                    'kainan.ph',
-                    'ocs.com.ph',
-                    'bisita.com.ph',
-                    'smarter.com.ph',
-                ];
-                $websiteDropdownClass = count($websiteLinks) > 10
-                    ? 'dropdown-menu website-links-menu multi-column-menu'
-                    : 'dropdown-menu website-links-menu';
             @endphp
 
             <!-- Center Menu -->
@@ -108,20 +88,11 @@
                     <a class="nav-link {{ request()->is('home') ? 'active' : '' }}" href="{{ $homeUrl }}">Home</a>
                 </li>
 
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('websites.index') ? 'active' : '' }}"
+                        href="{{ route('websites.index') }}">
                         Website
                     </a>
-                    <ul class="{{ $websiteDropdownClass }}">
-                        @foreach ($websiteLinks as $websiteLink)
-                            <li>
-                                <a class="dropdown-item" href="{{ 'https://' . $websiteLink }}" target="_blank"
-                                    rel="noopener noreferrer">
-                                    {{ $websiteLink }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
                 </li>
 
                 @foreach ($menuCategories as $menuCategory)
@@ -260,23 +231,6 @@
                     },
                 ]);
             }
-            $websiteLinks = [
-                'blogs.tourlytours.com',
-                'asi.com.ph',
-                'my.pesocard.ph',
-                'ustdi.com.ph',
-                'my.bisita.com.ph',
-                'ecapp.uniti.com.ph',
-                'ikak.net',
-                'murakami.com.ph',
-                'autogate.net.ph',
-                'powerboard.com.ph',
-                'smartertrack.com.ph',
-                'kainan.ph',
-                'ocs.com.ph',
-                'bisita.com.ph',
-                'smarter.com.ph',
-            ];
         @endphp
 
         <ul class="navbar-nav mobile-menu-list">
@@ -285,21 +239,11 @@
                 <a class="nav-link" href="{{ $homeUrl }}">Home</a>
             </li>
 
-            <li class="nav-item mobile-menu-group">
-                <a class="nav-link dropdown-toggle" href="#mobileWebsiteLinks" data-bs-toggle="collapse"
-                    role="button" aria-expanded="false" aria-controls="mobileWebsiteLinks">
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('websites.index') ? 'active' : '' }}"
+                    href="{{ route('websites.index') }}">
                     Website
                 </a>
-                <ul class="collapse mobile-submenu-list" id="mobileWebsiteLinks">
-                    @foreach ($websiteLinks as $websiteLink)
-                        <li>
-                            <a class="dropdown-item" href="{{ 'https://' . $websiteLink }}" target="_blank"
-                                rel="noopener noreferrer">
-                                {{ $websiteLink }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
             </li>
 
             @foreach ($menuCategories as $menuCategory)
