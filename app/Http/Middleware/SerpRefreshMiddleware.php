@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\SerpRememberState;
 use Closure;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,13 +12,24 @@ use Carbon\Carbon;
 
 class SerpRefreshMiddleware
 {
+    public function __construct(
+        protected SerpRememberState $rememberState,
+    ) {
+    }
+
     public function handle($request, Closure $next)
     {
+        if (session('auth_source') === 'local') {
+            return $next($request);
+        }
+
         $expiry  = session('serp_expiry');
         $refresh = session('serp_refresh');
 
         if (!$expiry || !$refresh) {
             session()->flush();
+            $this->rememberState->forgetRememberState();
+
             return redirect('/login');
         }
 
@@ -32,6 +44,8 @@ class SerpRefreshMiddleware
 
             if (!$res->successful()) {
                 session()->flush();
+                $this->rememberState->forgetRememberState();
+
                 return redirect('/login');
             }
 
@@ -46,10 +60,12 @@ class SerpRefreshMiddleware
                 ]);
 
                 session()->flush();
+                $this->rememberState->forgetRememberState();
+
                 return redirect('/login');
             }
 
-            session([
+            $this->rememberState->putSession([
                 'auth_source' => 'serp',
                 'serp_token' => $token,
                 'serp_refresh' => $refreshToken,
@@ -57,6 +73,15 @@ class SerpRefreshMiddleware
                     ? Carbon::parse($expiration)->toDateTimeString()
                     : now()->addMinutes((int) config('jwt.ttl', 60))->toDateTimeString(),
             ]);
+
+            if ($request->hasCookie(SerpRememberState::COOKIE_NAME)) {
+                $this->rememberState->syncRememberState(true, session()->only([
+                    'auth_source',
+                    'serp_token',
+                    'serp_refresh',
+                    'serp_expiry',
+                ]));
+            }
         }
 
         return $next($request);

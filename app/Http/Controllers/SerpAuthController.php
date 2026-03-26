@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Carbon\Carbon;
+use App\Support\SerpRememberState;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Log;
 
 class SerpAuthController extends Controller
 {
+    public function __construct(
+        protected SerpRememberState $rememberState,
+    ) {
+    }
+
     protected function markLoggedIn(User $user): void
     {
         $user->forceFill([
@@ -37,24 +42,21 @@ class SerpAuthController extends Controller
         $request->validate([
             'username' => 'required',
             'password' => 'required',
+            'remember' => 'nullable|boolean',
         ]);
 
-      $serpId = trim((string) $request->username);
+        $remember = $request->boolean('remember');
+        $serpId = trim((string) $request->username);
 
-    if (strtolower($serpId) === 'steven') {
+        if (strtolower($serpId) === 'steven') {
+            $user = User::whereRaw('LOWER(name) = ?', ['steven'])->first();
 
-        $user = User::whereRaw('LOWER(name) = ?', ['steven'])->first();
+            if ($user) {
+                return $this->completeLocalLogin($request, $user, $remember);
+            }
 
-        if ($user) {
-            $this->markLoggedIn($user);
-            Auth::guard('web')->login($user, true);
-            $request->session()->regenerate();
-
-            return redirect('/home');
+            return back()->with('error', 'Invalid credentials');
         }
-
-        return back()->with('error', 'Invalid credentials');
-    }
 
         try {
             $response = Http::timeout(15)->withHeaders([
@@ -64,19 +66,13 @@ class SerpAuthController extends Controller
                 'password' => $request->password,
             ]);
 
-            // 🔥 STEP 1: If SERP fails → fallback to DB login
             if (!$response->successful()) {
-
                 $user = User::where('serp_id', $serpId)
                     ->orWhere('name', $serpId)
                     ->first();
 
                 if ($user) {
-                    $this->markLoggedIn($user);
-                    Auth::login($user);
-                    $request->session()->regenerate();
-
-                    return redirect('/home');
+                    return $this->completeLocalLogin($request, $user, $remember);
                 }
 
                 return back()
@@ -86,19 +82,13 @@ class SerpAuthController extends Controller
 
             $serp = $response->json();
 
-            // 🔥 STEP 2: If SERP response invalid → fallback
             if (!($serp['success'] ?? true)) {
-
                 $user = User::where('serp_id', $serpId)
                     ->orWhere('name', $serpId)
                     ->first();
 
                 if ($user) {
-                    $this->markLoggedIn($user);
-                    Auth::login($user);
-                    $request->session()->regenerate();
-
-                    return redirect('/home');
+                    return $this->completeLocalLogin($request, $user, $remember);
                 }
 
                 return back()
@@ -106,7 +96,6 @@ class SerpAuthController extends Controller
                     ->withInput($request->only('username'));
             }
 
-            // 🔥 STEP 3: Extract token
             $tokenPayload = $this->extractTokenPayload($serp);
 
             if (!$tokenPayload['token'] || !$tokenPayload['refresh_token']) {
@@ -122,7 +111,6 @@ class SerpAuthController extends Controller
                 ->unique()
                 ->values();
 
-            // 🔥 STEP 4: Find user
             $user = User::where(function ($query) use ($identifiers) {
                 $query->whereIn('serp_id', $identifiers)
                     ->orWhereIn('name', $identifiers);
@@ -157,24 +145,8 @@ class SerpAuthController extends Controller
                 $user->save();
             }
 
-            // 🔥 STEP 5: Login
-            $this->markLoggedIn($user);
-            Auth::guard('web')->login($user);
-            $request->session()->regenerate();
-
-            session([
-                'auth_source' => 'serp',
-                'serp_token' => $tokenPayload['token'],
-                'serp_refresh' => $tokenPayload['refresh_token'],
-                'serp_expiry' => !empty($tokenPayload['expiration'])
-                    ? Carbon::parse($tokenPayload['expiration'])->toDateTimeString()
-                    : now()->addMinutes((int) config('jwt.ttl', 60))->toDateTimeString(),
-            ]);
-
-            return redirect('/home');
-
+            return $this->completeSerpLogin($request, $user, $tokenPayload, $remember);
         } catch (\Throwable $e) {
-
             Log::error('SERP LOGIN ERROR', [
                 'username' => $request->username,
                 'message' => $e->getMessage(),
@@ -189,6 +161,7 @@ class SerpAuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+        $this->rememberState->forgetRememberState();
 
         $request->session()->forget(['auth_source', 'serp_token', 'serp_refresh', 'serp_expiry']);
         $request->session()->invalidate();
@@ -203,6 +176,8 @@ class SerpAuthController extends Controller
 
         if (!$refreshToken) {
             session()->flush();
+            $this->rememberState->forgetRememberState();
+
             return redirect('/login');
         }
 
@@ -216,17 +191,15 @@ class SerpAuthController extends Controller
             $payload = $this->extractTokenPayload($response->json());
 
             if ($payload['token'] && $payload['refresh_token']) {
-                session([
-                    'auth_source' => 'serp',
-                    'serp_token' => $payload['token'],
-                    'serp_refresh' => $payload['refresh_token'],
-                    'serp_expiry' => !empty($payload['expiration'])
-                        ? Carbon::parse($payload['expiration'])->toDateTimeString()
-                        : now()->addMinutes((int) config('jwt.ttl', 60))->toDateTimeString(),
-                ]);
+                $state = $this->rememberState->buildSerpState($payload);
+                $this->rememberState->putSession($state);
 
                 if ($user = Auth::user()) {
                     $user->forceFill(['serp_token' => $payload['token']])->save();
+                }
+
+                if (request()->hasCookie(SerpRememberState::COOKIE_NAME)) {
+                    $this->rememberState->syncRememberState(true, $state);
                 }
 
                 return redirect('/home');
@@ -234,8 +207,35 @@ class SerpAuthController extends Controller
         }
 
         session()->flush();
+        $this->rememberState->forgetRememberState();
 
         return redirect('/login')
             ->with('error', 'Session expired. Please login again.');
+    }
+
+    protected function completeLocalLogin(Request $request, User $user, bool $remember)
+    {
+        $this->markLoggedIn($user);
+        Auth::guard('web')->login($user, $remember);
+        $request->session()->regenerate();
+
+        $state = $this->rememberState->buildLocalState();
+        $this->rememberState->putSession($state);
+        $this->rememberState->syncRememberState($remember, $state);
+
+        return redirect('/home');
+    }
+
+    protected function completeSerpLogin(Request $request, User $user, array $tokenPayload, bool $remember)
+    {
+        $this->markLoggedIn($user);
+        Auth::guard('web')->login($user, $remember);
+        $request->session()->regenerate();
+
+        $state = $this->rememberState->buildSerpState($tokenPayload);
+        $this->rememberState->putSession($state);
+        $this->rememberState->syncRememberState($remember, $state);
+
+        return redirect('/home');
     }
 }

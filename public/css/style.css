@@ -205,7 +205,9 @@ body.website-page main {
 }
 
 .website-table-wrap {
+    width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .website-table {
@@ -337,6 +339,10 @@ body.website-page main {
 
     .website-summary-card {
         min-width: 100%;
+    }
+
+    .website-table-wrap {
+        margin: 0 -1px;
     }
 
     .website-table {
@@ -3802,4 +3808,5 @@ body.ebook-view #zoom-wrapper {
 .side-btn {
     pointer-events: auto;
 }
+
 

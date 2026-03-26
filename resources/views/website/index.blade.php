@@ -27,7 +27,8 @@
                 <a href="{{ url('/home') }}" class="btn btn-outline-primary rounded-pill px-3">Back to Home</a>
             </div>
 
-            <table class="table website-table align-middle mb-0">
+            <div class="website-table-wrap">
+                <table class="table website-table align-middle mb-0">
                     <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -64,8 +65,10 @@
                             </tr>
                         @endforeach
                     </tbody>
-            </table>
+                </table>
+            </div>
         </div>
     </section>
 @endsection
+
 

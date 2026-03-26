@@ -47,7 +47,7 @@
                         @csrf
 
                         <div class="form-field">
-                            <input id="username" type="text" name="username" placeholder=" " required>
+                            <input id="username" type="text" name="username" placeholder=" " value="{{ old('username') }}" required>
                             <label for="username" class="floating-label">
                                 <span class="label-icon" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" role="img">
@@ -74,6 +74,12 @@
                             <span class="field-line" aria-hidden="true"></span>
                         </div>
 
+                        <label class="remember-toggle" for="remember">
+                            <input id="remember" type="checkbox" name="remember" value="1"
+                                {{ old('remember') ? 'checked' : '' }}>
+                            <span>Remember me</span>
+                        </label>
+
                         <button type="submit">Login</button>
                     </form>
                 </div>
@@ -84,6 +90,5 @@
 </body>
 
 </html>
-
 
 
