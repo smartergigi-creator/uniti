@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\File;
+
 class AdminController extends Controller
 {
  
@@ -185,6 +187,9 @@ public function editEbook($id)
     return view('admin.ebook-edit', compact('ebook', 'categories', 'subcategories'));
 }
 
+
+
+
 public function updateEbook(Request $request, $id)
 {
     $ebook = Ebook::findOrFail($id);
@@ -208,6 +213,7 @@ public function updateEbook(Request $request, $id)
     $subcategoryId = $subcategoryId > 0 ? $subcategoryId : null;
     $relatedSubcategoryId = $relatedSubcategoryId > 0 ? $relatedSubcategoryId : null;
 
+    // ✅ CATEGORY VALIDATION
     if ($categoryId !== null && !Category::find($categoryId)) {
         return back()->withErrors([
             'category_id' => 'Invalid category selected.'
@@ -246,6 +252,7 @@ public function updateEbook(Request $request, $id)
         }
     }
 
+    // ✅ BASIC FIELDS UPDATE
     $title = trim((string) ($validated['title'] ?? ''));
     $authorName = trim((string) ($validated['author_name'] ?? ''));
     $fileTitle = trim((string) ($validated['file_title'] ?? ''));
@@ -253,34 +260,67 @@ public function updateEbook(Request $request, $id)
     if ($title !== '') {
         $ebook->title = $title;
     }
+
     if ($request->filled('year')) {
         $ebook->year = (int) $validated['year'];
     }
+
     if ($authorName !== '') {
         $ebook->author_name = $authorName;
     }
+
     if ($fileTitle !== '') {
         $ebook->file_title = $fileTitle;
     }
 
-    //  FILE UPLOAD LOGIC (FIXED)
+    // ✅ FILE UPLOAD (ONLY IF NEW FILE GIVEN)
     if ($request->hasFile('ebook_file')) {
 
-        // delete old file
-        if ($ebook->pdf_path && file_exists(public_path($ebook->pdf_path))) {
-            unlink(public_path($ebook->pdf_path));
+        // 🧹 DELETE OLD FILE + FOLDER
+        if ($ebook->pdf_path) {
+            $oldPath = public_path($ebook->pdf_path);
+
+            if (file_exists($oldPath)) {
+                unlink($oldPath);
+            }
+
+            if ($ebook->folder_path) {
+                $oldFolder = public_path('ebooks/' . $ebook->folder_path);
+                if (File::exists($oldFolder)) {
+                    File::deleteDirectory($oldFolder);
+                }
+            }
         }
 
-        // upload new file
+        // 📂 NEW FILE
         $file = $request->file('ebook_file');
-        $filename = time() . '_' . $file->getClientOriginalName();
-        $file->move(public_path('uploads/ebooks'), $filename);
 
-        // save new path (IMPORTANT FIX)
-        $ebook->pdf_path = 'uploads/ebooks/' . $filename;
+        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $cleanName = Str::slug($originalName);
+
+        $folder = $cleanName . '_' . time() . '_' . Str::random(4);
+
+        // ✅ ENV BASED PATH
+        if (env('FILE_ROOT') === 'public_html') {
+            $basePath = dirname(base_path()) . '/public_html/ebooks/' . $folder;
+        } else {
+            $basePath = public_path('ebooks/' . $folder);
+        }
+
+        if (!File::exists($basePath)) {
+            File::makeDirectory($basePath, 0755, true);
+        }
+
+        $pdfName = $cleanName . '.pdf';
+
+        $file->move($basePath, $pdfName);
+
+        // ✅ SAVE NEW PATH
+        $ebook->pdf_path = "ebooks/$folder/$pdfName";
+        $ebook->folder_path = $folder;
     }
 
-    // no upload → old file remains
+    // ❗ NO FILE → OLD FILE STAYS
 
     $ebook->category_id = $categoryId;
     $ebook->subcategory_id = $subcategoryId;

@@ -151,11 +151,11 @@ Route::middleware(['auth','admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/flip-book/{token}',
+Route::get('/flip-book/{slug}',
     [EbookShareController::class, 'view']
 )->name('ebook.share');
 
-Route::get('/flip-book/{token}/download',
+Route::get('/flip-book/{slug}/download',
     [EbookShareController::class, 'download']
 )->name('ebook.share.download');
 

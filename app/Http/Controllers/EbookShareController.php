@@ -30,7 +30,7 @@ class EbookShareController extends Controller
             ], 403);
         }
 
-        // 🔥 FIX: SUPPORT BOTH ID & SLUG
+        //  FIX: SUPPORT BOTH ID & SLUG
         $ebook = is_numeric($id)
             ? Ebook::find($id)
             : Ebook::where('slug', $id)->first();
@@ -85,7 +85,7 @@ class EbookShareController extends Controller
             }
         }
 
-        // 🔥 Generate new share
+        //  Generate new share
         $ebook->share_token = Str::random(40);
         $ebook->share_expires_at = now()->addDays(7);
         $ebook->share_enabled = 1;
@@ -110,95 +110,124 @@ class EbookShareController extends Controller
     }
 }
 
-    public function view($token)
-    {
-        $ebook = Ebook::where('share_token', $token)
-            ->where('share_enabled', 1)
-            ->first();
-        $reportRecipients = collect();
+  public function view($slug)
+{
+    $ebook = Ebook::where('slug', $slug)->first();
 
-        if (!$ebook) {
-            return view('ebook/errors.share-invalid');
-        }
-
-        if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
-            return view('ebook/errors.share-expired');
-        }
-
-        if (
-            $ebook->max_views !== null &&
-            (int) $ebook->max_views > 0 &&
-            $ebook->current_views >= $ebook->max_views
-        ) {
-            return view('ebook/errors.limit-reached');
-        }
-
-        $ebook->increment('current_views');
-
-        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
-
-        if (!file_exists($pdfPath)) {
-            return view('ebook/errors.share-invalid');
-        }
-
-        if (auth()->check()) {
-            $reportRecipients = User::query()
-                ->where('status', 'active')
-                ->whereKeyNot(auth()->id())
-                ->orderBy('name')
-                ->get(['id', 'name', 'email']);
-        }
-
-        $downloadUrl = route('ebook.share.download', $token);
-
-        return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
+    if (!$ebook) {
+        return view('ebook/errors.share-invalid');
     }
 
-    public function download($token, WatermarkedPdfDownloader $downloader)
-    {
-        $ebook = Ebook::where('share_token', $token)
-            ->where('share_enabled', 1)
-            ->first();
+    // ✅ share enabled check (optional but recommended)
+    if ((int) $ebook->share_enabled !== 1) {
+        return view('ebook/errors.share-invalid');
+    }
 
-        if (!$ebook) {
-            abort(404, 'Shared ebook not found');
-        }
+    // ✅ expiry check
+    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+        return view('ebook/errors.share-expired');
+    }
 
-        if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
-            abort(403, 'Share link expired');
-        }
+    // ✅ view limit check
+    if (
+        $ebook->max_views !== null &&
+        (int) $ebook->max_views > 0 &&
+        $ebook->current_views >= $ebook->max_views
+    ) {
+        return view('ebook/errors.limit-reached');
+    }
 
-        if (
-            $ebook->max_views !== null &&
-            (int) $ebook->max_views > 0 &&
-            $ebook->current_views >= $ebook->max_views
-        ) {
-            abort(403, 'Share limit reached');
-        }
+    // increment views
+    $ebook->increment('current_views');
 
-        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+    $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        abort_unless(is_file($pdfPath), 404, 'PDF file not found');
+    if (!file_exists($pdfPath)) {
+        return view('ebook/errors.share-invalid');
+    }
 
-        $ebook->increment('current_views');
+    $reportRecipients = collect();
 
-        try {
-            $payload = $downloader->build(
-                $pdfPath,
-                $this->downloadFileName($ebook),
-                $this->resolveWatermarkLogoPath(),
-                'UNITI'
-            );
+    if (auth()->check()) {
+        $reportRecipients = User::query()
+            ->where('status', 'active')
+            ->whereKeyNot(auth()->id())
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+    }
 
-            return response($payload['content'], 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+    // ✅ slug based download
+    $downloadUrl = route('ebook.share.download', $slug);
+
+    return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
+}
+
+    public function download($slug, WatermarkedPdfDownloader $downloader)
+{
+    // 🔍 find ebook by slug
+    $ebook = Ebook::where('slug', $slug)
+        ->where('share_enabled', 1)
+        ->first();
+
+    if (!$ebook) {
+        abort(404, 'Shared ebook not found');
+    }
+
+    // ⏳ expiry check
+    if ($ebook->share_expires_at && now()->gt($ebook->share_expires_at)) {
+        abort(403, 'Share link expired');
+    }
+
+    // 👁️ view limit check
+    if (
+        $ebook->max_views !== null &&
+        (int) $ebook->max_views > 0 &&
+        $ebook->current_views >= $ebook->max_views
+    ) {
+        abort(403, 'Share limit reached');
+    }
+
+    // 📂 resolve file path
+    $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+    if (!is_file($pdfPath)) {
+        abort(404, 'PDF file not found');
+    }
+
+    // 🔄 increment view count
+    $ebook->increment('current_views');
+
+    try {
+        // 🧾 watermark download
+        $payload = $downloader->build(
+            $pdfPath,
+            $this->downloadFileName($ebook),
+            $this->resolveWatermarkLogoPath(),
+            'UNITI'
+        );
+
+        return response($payload['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+
+    } catch (\Throwable $e) {
+
+        // 🔁 fallback normal download
+        return response()->download(
+            $pdfPath,
+            $this->downloadFileName($ebook),
+            [
                 'Cache-Control' => 'no-store, no-cache, must-revalidate',
-            ]);
-        } catch (\Throwable $e) {
-            return response()->download($pdfPath, $this->downloadFileName($ebook));
-        }
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]
+        );
     }
+}
 
     protected function resolvePdfPath(string $pdfPath): string
     {
