@@ -28,7 +28,8 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-body">
-            <form action="{{ route('admin.ebooks.update', $ebook->id) }}" method="POST" class="row g-3">
+            <form action="{{ route('admin.ebooks.update', $ebook->id) }}" method="POST" enctype="multipart/form-data"
+                class="row g-3">
                 @csrf
                 @method('PUT')
 
@@ -51,9 +52,30 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label fw-semibold">File Title</label>
-                    <input type="text" name="file_title" class="form-control" maxlength="255"
+                    <label class="form-label fw-semibold">File Name</label>
+                    <input type="readable" name="file_title" class="form-control" maxlength="255"
                         value="{{ old('file_title', $ebook->file_title) }}">
+                </div>
+
+                {{-- ✅ NEW PDF UPLOAD --}}
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Upload New PDF</label>
+                    <input type="file" name="ebook_file" class="form-control" accept="application/pdf">
+                    <small style="color:red; font-weight:600;">
+                        ⚠️ When a new PDF is uploaded, please ensure the Ebook Title is updated.
+                    </small>
+                </div>
+
+                {{-- ✅ CURRENT PDF VIEW --}}
+                <div class="col-md-6 d-flex align-items-end">
+                    @if ($ebook->file_path)
+                        <div>
+                            <label class="form-label fw-semibold d-block">Current PDF</label>
+                            <a href="{{ asset($ebook->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                View PDF
+                            </a>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="col-12 pt-1">
@@ -67,8 +89,7 @@
                     <select name="category_id" id="categorySelect" class="form-select">
                         <option value="">Select category</option>
                         @foreach ($categories as $category)
-                            <option value="{{ $category->id }}"
-                                @selected((int) old('category_id', $ebook->category_id) === (int) $category->id)>
+                            <option value="{{ $category->id }}" @selected((int) old('category_id', $ebook->category_id) === (int) $category->id)>
                                 {{ $category->name }}
                             </option>
                         @endforeach
@@ -93,8 +114,8 @@
                     <select name="related_subcategory_id" id="relatedSubcategorySelect" class="form-select">
                         <option value="">Select related subcategory</option>
                         @foreach ($relatedLevelCategories as $relatedSubcategory)
-                            <option value="{{ $relatedSubcategory->id }}" data-parent="{{ $relatedSubcategory->parent_id }}"
-                                @selected((int) old('related_subcategory_id', $ebook->related_subcategory_id) === (int) $relatedSubcategory->id)>
+                            <option value="{{ $relatedSubcategory->id }}"
+                                data-parent="{{ $relatedSubcategory->parent_id }}" @selected((int) old('related_subcategory_id', $ebook->related_subcategory_id) === (int) $relatedSubcategory->id)>
                                 {{ $relatedSubcategory->name }}
                             </option>
                         @endforeach
@@ -121,7 +142,8 @@
 
             const allSubcategoryOptions = Array.from(subcategorySelect.querySelectorAll('option[data-parent]'))
                 .map((option) => option.cloneNode(true));
-            const allRelatedSubcategoryOptions = Array.from(relatedSubcategorySelect.querySelectorAll('option[data-parent]'))
+            const allRelatedSubcategoryOptions = Array.from(relatedSubcategorySelect.querySelectorAll(
+                    'option[data-parent]'))
                 .map((option) => option.cloneNode(true));
 
             const oldSubcategory = @json((string) old('subcategory_id', $ebook->subcategory_id));
@@ -172,7 +194,8 @@
                 const matchedRelatedSubcategories = allRelatedSubcategoryOptions
                     .filter((option) => option.dataset.parent === subcategoryId);
 
-                matchedRelatedSubcategories.forEach((option) => relatedSubcategorySelect.appendChild(option.cloneNode(true)));
+                matchedRelatedSubcategories.forEach((option) => relatedSubcategorySelect.appendChild(option
+                    .cloneNode(true)));
 
                 const hasRelatedSubcategories = matchedRelatedSubcategories.length > 0;
                 toggleField(relatedSubcategoryField, relatedSubcategorySelect, hasRelatedSubcategories);

@@ -224,7 +224,7 @@
 
                                 @if ($canShareNow)
                                     <button type="button" class="book-action-btn book-action-share share-action-btn"
-                                        onclick="openShareModal({{ $book->id }})" title="Share">
+                                        onclick="openShareModal('{{ $book->slug }}')" title="Share">
                                         <i class="bi bi-share"></i>
                                         <span>Share</span>
                                     </button>
@@ -259,8 +259,7 @@
 
     </div>
 
-    <input type="text" id="shareLinkInput" class="form-control d-none" readonly tabindex="-1"
-        aria-hidden="true">
+    <input type="text" id="shareLinkInput" class="form-control d-none" readonly tabindex="-1" aria-hidden="true">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>

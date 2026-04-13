@@ -90,5 +90,34 @@ protected $fillable = [
     {
         return $this->hasMany(\App\Models\Ebook::class, 'user_id');
     }
+  
+
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    public function isSpecialProject(): bool
+    {
+        return $this->hasAnyRole([
+            'specialproject',
+            'special_project_dtp',
+        ]);
+    }
+
+    public function hasUnlimitedPdfAccess(): bool
+    {
+        return $this->isAdmin() || $this->isSpecialProject();
+    }
 
 }

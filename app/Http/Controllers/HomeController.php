@@ -19,10 +19,11 @@ class HomeController extends Controller
         $canShareNow = false;
 
         if ($user) {
-            $canUploadPermission = $user->role === 'admin' || (bool) $user->can_upload;
+            $hasUnlimitedPdfAccess = $user->hasUnlimitedPdfAccess();
+            $canUploadPermission = $hasUnlimitedPdfAccess || (bool) $user->can_upload;
             if ($canUploadPermission) {
                 $uploadLimit = (int) $user->upload_limit;
-                if ($user->role === 'admin' || $uploadLimit === 0) {
+                if ($hasUnlimitedPdfAccess || $uploadLimit === 0) {
                     $canUploadNow = true;
                 } else {
                     $uploadedCount = Ebook::where(function ($q) use ($user) {
@@ -37,10 +38,10 @@ class HomeController extends Controller
                 }
             }
 
-            $canSharePermission = $user->role === 'admin' || (bool) $user->can_share;
+            $canSharePermission = $hasUnlimitedPdfAccess || (bool) $user->can_share;
             if ($canSharePermission) {
                 $shareLimit = (int) $user->share_limit;
-                if ($user->role === 'admin' || $shareLimit === 0) {
+                if ($hasUnlimitedPdfAccess || $shareLimit === 0) {
                     $canShareNow = true;
                 } else {
                     $activeShares = Ebook::where('shared_by', $user->id)

@@ -20,7 +20,7 @@ class CanUpload
     }
 
     $user = auth()->user();
-    $hasUploadAccess = $user->role === 'admin'
+    $hasUploadAccess = $user->hasUnlimitedPdfAccess()
         || $user->can_upload;
 
     if (!$hasUploadAccess) {

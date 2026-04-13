@@ -194,6 +194,7 @@ public function updateEbook(Request $request, $id)
         'year' => 'nullable|integer|digits:4|min:1900|max:2100',
         'author_name' => 'nullable|string|max:255',
         'file_title' => 'nullable|string|max:255',
+        'ebook_file' => 'nullable|file|mimes:pdf|max:20480',
         'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
         'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
         'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
@@ -261,9 +262,30 @@ public function updateEbook(Request $request, $id)
     if ($fileTitle !== '') {
         $ebook->file_title = $fileTitle;
     }
+
+    //  FILE UPLOAD LOGIC (FIXED)
+    if ($request->hasFile('ebook_file')) {
+
+        // delete old file
+        if ($ebook->pdf_path && file_exists(public_path($ebook->pdf_path))) {
+            unlink(public_path($ebook->pdf_path));
+        }
+
+        // upload new file
+        $file = $request->file('ebook_file');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $file->move(public_path('uploads/ebooks'), $filename);
+
+        // save new path (IMPORTANT FIX)
+        $ebook->pdf_path = 'uploads/ebooks/' . $filename;
+    }
+
+    // no upload → old file remains
+
     $ebook->category_id = $categoryId;
     $ebook->subcategory_id = $subcategoryId;
     $ebook->related_subcategory_id = $relatedSubcategoryId;
+
     $ebook->save();
 
     return redirect()

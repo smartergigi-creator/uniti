@@ -46,7 +46,10 @@ window.addEventListener("pageshow", (event) => {
     let lastNavigablePageIndex = 1;
     const requestedPageNumber = Math.max(
         1,
-        Number.parseInt(new URLSearchParams(window.location.search).get("page") || "1", 10) || 1,
+        Number.parseInt(
+            new URLSearchParams(window.location.search).get("page") || "1",
+            10,
+        ) || 1,
     );
 
     let isReady = false;
@@ -146,12 +149,10 @@ window.addEventListener("pageshow", (event) => {
         };
 
         if (window.__PDF_PAGES_READY_PROMISE__ instanceof Promise) {
-            window.__PDF_PAGES_READY_PROMISE__
-                .then(initWhenReady)
-                .catch(() => {
-                    isInitRunning = false;
-                    hideLoader();
-                });
+            window.__PDF_PAGES_READY_PROMISE__.then(initWhenReady).catch(() => {
+                isInitRunning = false;
+                hideLoader();
+            });
             return;
         }
 
@@ -213,10 +214,15 @@ window.addEventListener("pageshow", (event) => {
         const controlsRect = bottomControls?.getBoundingClientRect();
         const rect = viewer?.getBoundingClientRect();
 
-        const availableW = Math.max(220, Math.floor((rect?.width || vw) - (mobile ? 12 : 48)));
+        const availableW = Math.max(
+            220,
+            Math.floor((rect?.width || vw) - (mobile ? 12 : 48)),
+        );
         let availableH = Math.max(
             220,
-            Math.floor((rect?.height || vh) - (mobile ? (landscape ? 10 : 20) : 36)),
+            Math.floor(
+                (rect?.height || vh) - (mobile ? (landscape ? 10 : 20) : 36),
+            ),
         );
 
         if (mobile) {
@@ -249,12 +255,19 @@ window.addEventListener("pageshow", (event) => {
 =============================== */
     function refreshRealPageBounds(book) {
         const allPages = Array.from(book.querySelectorAll(".page"));
-        const firstReal = allPages.findIndex((p) => !p.classList.contains("fake"));
-        const lastReal = allPages.length - 1 - [...allPages].reverse()
-            .findIndex((p) => !p.classList.contains("fake"));
+        const firstReal = allPages.findIndex(
+            (p) => !p.classList.contains("fake"),
+        );
+        const lastReal =
+            allPages.length -
+            1 -
+            [...allPages]
+                .reverse()
+                .findIndex((p) => !p.classList.contains("fake"));
 
         firstRealPageIndex = firstReal >= 0 ? firstReal : 0;
-        lastRealPageIndex = lastReal >= firstRealPageIndex ? lastReal : firstRealPageIndex;
+        lastRealPageIndex =
+            lastReal >= firstRealPageIndex ? lastReal : firstRealPageIndex;
         lastNavigablePageIndex = lastRealPageIndex;
     }
 
@@ -262,7 +275,11 @@ window.addEventListener("pageshow", (event) => {
         const allPages = Array.from(book.querySelectorAll(".page"));
         const loadedRealIndexes = allPages
             .map((page, index) => ({ page, index }))
-            .filter(({ page }) => !page.classList.contains("fake") && page.dataset.loaded === "1")
+            .filter(
+                ({ page }) =>
+                    !page.classList.contains("fake") &&
+                    page.dataset.loaded === "1",
+            )
             .map(({ index }) => index);
 
         if (!loadedRealIndexes.length) {
@@ -275,16 +292,30 @@ window.addEventListener("pageshow", (event) => {
     }
 
     function syncViewerState() {
-        const allPages = Array.from(document.querySelectorAll("#flipbook .page"));
-        const realPages = allPages.filter((page) => !page.classList.contains("fake"));
-        const currentIndex = pageFlip ? pageFlip.getCurrentPageIndex() : firstRealPageIndex;
+        const allPages = Array.from(
+            document.querySelectorAll("#flipbook .page"),
+        );
+        const realPages = allPages.filter(
+            (page) => !page.classList.contains("fake"),
+        );
+        const currentIndex = pageFlip
+            ? pageFlip.getCurrentPageIndex()
+            : firstRealPageIndex;
         const currentPage = allPages[currentIndex] || realPages[0] || null;
-        const currentPageNumber = Number(currentPage?.dataset.pageNo || realPages[0]?.dataset.pageNo || 1);
+        const currentPageNumber = Number(
+            currentPage?.dataset.pageNo || realPages[0]?.dataset.pageNo || 1,
+        );
         const totalPages = realPages.length || 1;
-        const usePortrait = pageFlip ? pageFlip.getSettings().usePortrait : window.innerWidth <= 900;
+        const usePortrait = pageFlip
+            ? pageFlip.getSettings().usePortrait
+            : window.innerWidth <= 900;
         let currentPageLabel = String(currentPageNumber);
 
-        if (!usePortrait && currentPageNumber > 1 && currentPageNumber < totalPages) {
+        if (
+            !usePortrait &&
+            currentPageNumber > 1 &&
+            currentPageNumber < totalPages
+        ) {
             currentPageLabel = `${currentPageNumber}-${currentPageNumber + 1}`;
         }
 
@@ -385,8 +416,14 @@ window.addEventListener("pageshow", (event) => {
         pageFlip.loadFromHTML(book.querySelectorAll(".page"));
 
         setTimeout(() => {
-            const initialPageIndex = resolveRequestedPageIndex(book, requestedPageNumber);
-            lastNavigablePageIndex = Math.max(lastNavigablePageIndex, initialPageIndex);
+            const initialPageIndex = resolveRequestedPageIndex(
+                book,
+                requestedPageNumber,
+            );
+            lastNavigablePageIndex = Math.max(
+                lastNavigablePageIndex,
+                initialPageIndex,
+            );
             pageFlip.turnToPage(initialPageIndex);
             syncViewerState();
             updateNav();
@@ -515,7 +552,8 @@ window.addEventListener("pageshow", (event) => {
         const prev = document.getElementById("prevPage");
         const next = document.getElementById("nextPage");
 
-        if (prev) prev.style.display = i <= firstRealPageIndex ? "none" : "flex";
+        if (prev)
+            prev.style.display = i <= firstRealPageIndex ? "none" : "flex";
         if (next) next.style.display = i >= t ? "none" : "flex";
     }
 
@@ -561,14 +599,17 @@ window.addEventListener("pageshow", (event) => {
             event.preventDefault();
 
             const fileUrl =
-                downloadBtn.dataset.downloadUrl || downloadBtn.getAttribute("href");
+                downloadBtn.dataset.downloadUrl ||
+                downloadBtn.getAttribute("href");
             const fileName =
                 downloadBtn.dataset.downloadName ||
                 downloadBtn.getAttribute("download") ||
                 "ebook.pdf";
             const safeFileName =
-                fileName.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() ||
-                "ebook.pdf";
+                fileName
+                    .replace(/[\\/:*?"<>|]+/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim() || "ebook.pdf";
 
             if (!fileUrl) return;
 
@@ -618,7 +659,10 @@ window.addEventListener("pageshow", (event) => {
 
         const syncAfterFullscreen = () => {
             const isViewerFullscreen = document.fullscreenElement === wrap;
-            document.body.classList.toggle("fullscreen-active", isViewerFullscreen);
+            document.body.classList.toggle(
+                "fullscreen-active",
+                isViewerFullscreen,
+            );
 
             // Browser applies fullscreen layout async, so wait one frame.
             setTimeout(() => {
@@ -1081,7 +1125,9 @@ document.addEventListener("DOMContentLoaded", function () {
             selectedFiles.push(...Array.from(folderInput.files));
         }
 
-        const pdfFiles = selectedFiles.filter((file) => file.type === "application/pdf");
+        const pdfFiles = selectedFiles.filter(
+            (file) => file.type === "application/pdf",
+        );
         if (!pdfFiles.length) {
             showMessage("error", "Please select at least one PDF file.");
             return;
@@ -1208,9 +1254,9 @@ function deleteEbook(id) {
    SHARE LINK (SESSION AUTH)
 ============================ */
 
-function openShareModal(id) {
-    fetch("/ebooks/share/" + id, {
-        method: "POST", // ✅ Must be POST
+function openShareModal(slug) {
+    fetch("/ebooks/share/" + slug, {
+        method: "POST",
         headers: {
             "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')
                 .content,
@@ -1233,8 +1279,7 @@ function openShareModal(id) {
                         alert("Link copied!");
                     })
                     .catch(() => {
-                        const input =
-                            document.getElementById("shareLinkInput");
+                        const input = document.getElementById("shareLinkInput");
                         if (!input) {
                             alert(data.publicLink);
                             return;

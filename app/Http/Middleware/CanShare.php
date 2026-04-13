@@ -19,7 +19,7 @@ class CanShare
         abort(401);
     }
 
-    if (!auth()->user()->can_share && auth()->user()->role !== 'admin') {
+    if (!auth()->user()->hasUnlimitedPdfAccess() && !auth()->user()->can_share) {
         abort(403, 'Share permission denied');
     }
 

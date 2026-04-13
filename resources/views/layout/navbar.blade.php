@@ -1,4 +1,42 @@
 <nav class="navbar navbar-expand-lg nova-navbar fixed-top">
+    @php
+        $navbarUser = auth()->user();
+
+        $navbarUserLabel = $navbarUser && $navbarUser->isSpecialProject() ? 'Special Project' : null;
+
+        $navbarUserName = trim((string) ($navbarUser?->name ?: $navbarUser?->email ?: 'User'));
+        $navbarUserDisplay = strtok($navbarUserName, ' ') ?: 'User';
+    @endphp
+    <style>
+        .navbar-user-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.34rem 0.78rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #5fd45f 0%, #1da851 55%, #0f8d4a 100%);
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+            box-shadow: 0 10px 22px rgba(29, 168, 81, 0.24);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+        }
+
+        .navbar-role-note {
+            padding: 0.8rem 1rem 0.45rem;
+        }
+
+        .navbar-user-name {
+            display: inline-block;
+            max-width: 84px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+            font-weight: 700;
+        }
+    </style>
     <div class="container">
 
         <!-- Logo -->
@@ -12,12 +50,18 @@
 
             @auth
                 <div class="dropdown me-2">
-                    <button class="btn user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        {{ auth()->user()->name ?? auth()->user()->email }}
+                    <button class="btn user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        title="{{ $navbarUserName }}">
+                        <span class="navbar-user-name">{{ $navbarUserDisplay }}</span>
                     </button>
 
                     <ul class="dropdown-menu dropdown-menu-end">
-                        @if (auth()->user()->role === 'admin')
+                        @if ($navbarUserLabel)
+                            <li class="navbar-role-note">
+                                <span class="navbar-user-badge">{{ $navbarUserLabel }}</span>
+                            </li>
+                        @endif
+                        @if (auth()->user()->isAdmin())
                             <li>
                                 <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
                                     Dashboard
@@ -57,12 +101,11 @@
                     : \App\Models\Category::whereNull('parent_id')
                         ->with([
                             'children' => function ($query) {
-                                $query->orderBy('name')
-                                    ->with([
-                                        'children' => function ($childQuery) {
-                                            $childQuery->orderBy('name');
-                                        },
-                                    ]);
+                                $query->orderBy('name')->with([
+                                    'children' => function ($childQuery) {
+                                        $childQuery->orderBy('name');
+                                    },
+                                ]);
                             },
                         ])
                         ->orderBy('name')
@@ -70,12 +113,11 @@
                 if ($menuCategories instanceof \Illuminate\Database\Eloquent\Collection) {
                     $menuCategories->loadMissing([
                         'children' => function ($query) {
-                            $query->orderBy('name')
-                                ->with([
-                                    'children' => function ($childQuery) {
-                                        $childQuery->orderBy('name');
-                                    },
-                                ]);
+                            $query->orderBy('name')->with([
+                                'children' => function ($childQuery) {
+                                    $childQuery->orderBy('name');
+                                },
+                            ]);
                         },
                     ]);
                 }
@@ -107,9 +149,10 @@
                                 $hasGrandChildren = $menuCategory->children->contains(function ($childCategory) {
                                     return $childCategory->children->isNotEmpty();
                                 });
-                                $categoryMenuClass = !$hasGrandChildren && $menuCategory->children->count() > 10
-                                    ? 'dropdown-menu category-dropdown-menu category-dropdown-columns'
-                                    : 'dropdown-menu category-dropdown-menu';
+                                $categoryMenuClass =
+                                    !$hasGrandChildren && $menuCategory->children->count() > 10
+                                        ? 'dropdown-menu category-dropdown-menu category-dropdown-columns'
+                                        : 'dropdown-menu category-dropdown-menu';
                             @endphp
                             <ul class="{{ $categoryMenuClass }}">
                                 <li>
@@ -126,9 +169,10 @@
                                                 {{ $menuSubcategory->name }}
                                             </a>
                                             @php
-                                                $subcategoryMenuClass = $menuSubcategory->children->count() > 8
-                                                    ? 'dropdown-menu category-submenu-menu category-submenu-columns'
-                                                    : 'dropdown-menu category-submenu-menu';
+                                                $subcategoryMenuClass =
+                                                    $menuSubcategory->children->count() > 8
+                                                        ? 'dropdown-menu category-submenu-menu category-submenu-columns'
+                                                        : 'dropdown-menu category-submenu-menu';
                                             @endphp
                                             <ul class="{{ $subcategoryMenuClass }}">
                                                 @foreach ($menuSubcategory->children as $menuRelatedSubcategory)
@@ -161,12 +205,18 @@
             <div class="ms-auto d-flex align-items-center">
                 @auth
                     <div class="dropdown">
-                        <button class="btn user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                            {{ auth()->user()->name ?? auth()->user()->email }}
+                        <button class="btn user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            title="{{ $navbarUserName }}">
+                            <span class="navbar-user-name">{{ $navbarUserDisplay }}</span>
                         </button>
 
                         <ul class="dropdown-menu dropdown-menu-end">
-                            @if (auth()->user()->role === 'admin')
+                            @if ($navbarUserLabel)
+                                <li class="navbar-role-note">
+                                    <span class="navbar-user-badge">{{ $navbarUserLabel }}</span>
+                                </li>
+                            @endif
+                            @if (auth()->user()->isAdmin())
                                 <li>
                                     <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
                                         Dashboard
@@ -209,12 +259,11 @@
                 : \App\Models\Category::whereNull('parent_id')
                     ->with([
                         'children' => function ($query) {
-                            $query->orderBy('name')
-                                ->with([
-                                    'children' => function ($childQuery) {
-                                        $childQuery->orderBy('name');
-                                    },
-                                ]);
+                            $query->orderBy('name')->with([
+                                'children' => function ($childQuery) {
+                                    $childQuery->orderBy('name');
+                                },
+                            ]);
                         },
                     ])
                     ->orderBy('name')
@@ -222,12 +271,11 @@
             if ($menuCategories instanceof \Illuminate\Database\Eloquent\Collection) {
                 $menuCategories->loadMissing([
                     'children' => function ($query) {
-                        $query->orderBy('name')
-                            ->with([
-                                'children' => function ($childQuery) {
-                                    $childQuery->orderBy('name');
-                                },
-                            ]);
+                        $query->orderBy('name')->with([
+                            'children' => function ($childQuery) {
+                                $childQuery->orderBy('name');
+                            },
+                        ]);
                     },
                 ]);
             }
@@ -265,8 +313,8 @@
                                 @if ($menuSubcategory->children->isNotEmpty())
                                     <li class="mobile-submenu-group">
                                         <a class="dropdown-item dropdown-toggle"
-                                            href="#mobileSubcategory{{ $menuSubcategory->id }}" data-bs-toggle="collapse"
-                                            role="button" aria-expanded="false"
+                                            href="#mobileSubcategory{{ $menuSubcategory->id }}"
+                                            data-bs-toggle="collapse" role="button" aria-expanded="false"
                                             aria-controls="mobileSubcategory{{ $menuSubcategory->id }}">
                                             {{ $menuSubcategory->name }}
                                         </a>
@@ -301,7 +349,8 @@
                     </li>
                 @else
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
+                        <a class="nav-link"
+                            href="{{ $homeUrl }}?category={{ $menuCategory->id }}#ebooksSection">
                             {{ $menuCategory->name }}
                         </a>
                     </li>

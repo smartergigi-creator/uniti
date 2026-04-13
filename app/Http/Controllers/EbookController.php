@@ -51,109 +51,115 @@ class EbookController extends Controller
        2. UPLOAD PDF(s)
     ====================================================== */
     public function store(Request $request)
-    {
-        try {
+{
+    try {
 
-            $user = auth()->user();
+        $user = auth()->user();
 
-            if (!$user || (!$user->can_upload && $user->role !== 'admin')) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You are not allowed to upload'
-                ], 403);
-            }
-
-            $request->validate([
-                'ebook_name' => 'required|string|max:255',
-                'author_name' => 'required|string|max:255',
-                'year' => 'nullable|integer|digits:4|min:1900|max:2100',
-                'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
-                'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
-                'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
-                'pdfs'       => 'required|array|min:1',
-                'pdfs.*'     => 'required|file|mimes:pdf|max:51200',
-            ]);
-
-            $files = $request->file('pdfs');
-            if (!is_array($files)) {
-                $files = [$files];
-            }
-
-            $created = 0;
-            $manualTitle = $request->ebook_name;
-            $authorName = $request->author_name;
-            $publishYear = $request->filled('year') ? (int) $request->year : null;
-
-            foreach ($files as $file) {
-
-                if (!$file->isValid()) continue;
-
-                $originalName = pathinfo(
-                    $file->getClientOriginalName(),
-                    PATHINFO_FILENAME
-                );
-
-                $safeTitle = Str::title(str_replace('_', ' ', $originalName));
-
-                $folder = Str::slug($originalName)
-                    . '_' . time()
-                    . '_' . Str::random(4);
-
-                // $rootFolder = config('app.file_root');
-                // $basePath = base_path("../{$rootFolder}/ebooks/$folder");//live
-                // $basePath = base_path("{$rootFolder}/ebooks/$folder");//local
-                $basePath = $this->resolveManagedPath("ebooks/$folder");
-
-                if (!File::exists($basePath)) {
-                    File::makeDirectory($basePath, 0755, true);
-                }
-
-                $pdfName = Str::slug($originalName) . '.pdf';
-
-                $file->move($basePath, $pdfName);
-
-                // Generate unique slug
-                $baseSlug = Str::slug($manualTitle);
-                $slug = $baseSlug;
-                $counter = 1;
-
-                while (Ebook::where('slug', $slug)->exists()) {
-                    $slug = $baseSlug . '-' . $counter++;
-                }
-
-                Ebook::create([
-                    'title'       => $manualTitle,
-                    'year'        => $publishYear,
-                    'author_name' => $authorName,
-                    'slug'        => $slug,
-                    'file_title'  => $safeTitle,
-                    'pdf_path'    => "ebooks/$folder/$pdfName",
-                    'folder_path' => $folder,
-                    'page_count'  => 0,
-                    'category_id' => $request->category_id,
-                    'subcategory_id' => $request->subcategory_id,
-                    'related_subcategory_id' => $request->related_subcategory_id,
-                    'user_id'     => $user->id,
-                    'uploaded_by' => $user->id,
-                ]);
-
-                $created++;
-            }
-
-            return response()->json([
-                'status' => true,
-                'message' => "$created ebook(s) uploaded successfully."
-            ]);
-
-        } catch (\Throwable $e) {
-
+        if (!$user || (!$user->can_upload && !$user->hasUnlimitedPdfAccess())) {
             return response()->json([
                 'status' => false,
-                'message' => 'Upload failed',
-                'error'   => $e->getMessage()
-            ], 500);
+                'message' => 'You are not allowed to upload'
+            ], 403);
         }
+
+        $request->validate([
+            'ebook_name' => 'required|string|max:255',
+            'author_name' => 'required|string|max:255',
+            'year' => 'nullable|integer|digits:4|min:1900|max:2100',
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+            'subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+            'related_subcategory_id' => ['nullable', Rule::exists('categories', 'id')->where('is_deleted', 0)],
+            'pdfs'       => 'required|array|min:1',
+            'pdfs.*'     => 'required|file|mimes:pdf|max:51200',
+        ]);
+
+        $files = $request->file('pdfs');
+        if (!is_array($files)) {
+            $files = [$files];
+        }
+
+        $created = 0;
+        $manualTitle = $request->ebook_name;
+        $authorName = $request->author_name;
+        $publishYear = $request->filled('year') ? (int) $request->year : null;
+
+        foreach ($files as $file) {
+
+            if (!$file->isValid()) continue;
+
+            $originalName = pathinfo(
+                $file->getClientOriginalName(),
+                PATHINFO_FILENAME
+            );
+
+            $safeTitle = Str::title(str_replace('_', ' ', $originalName));
+
+            $folder = Str::slug($originalName)
+                . '_' . time()
+                . '_' . Str::random(4);
+
+            // ✅ ENV BASED PATH (LOCAL / LIVE SAFE)
+            if (env('FILE_ROOT') === 'public_html') {
+                // LIVE
+                $basePath = dirname(base_path()) . '/public_html/ebooks/' . $folder;
+            } else {
+                // LOCAL
+                $basePath = public_path('ebooks/' . $folder);
+            }
+
+            // Create folder if not exists
+            if (!File::exists($basePath)) {
+                File::makeDirectory($basePath, 0755, true);
+            }
+
+            $pdfName = Str::slug($originalName) . '.pdf';
+
+            // Move file
+            $file->move($basePath, $pdfName);
+
+            // Generate unique slug
+            $baseSlug = Str::slug($manualTitle);
+            $slug = $baseSlug;
+            $counter = 1;
+
+            while (Ebook::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $counter++;
+            }
+
+            Ebook::create([
+                'title'       => $manualTitle,
+                'year'        => $publishYear,
+                'author_name' => $authorName,
+                'slug'        => $slug,
+                'file_title'  => $safeTitle,
+                'pdf_path'    => "ebooks/$folder/$pdfName",
+                'folder_path' => $folder,
+                'page_count'  => 0,
+                'category_id' => $request->category_id,
+                'subcategory_id' => $request->subcategory_id,
+                'related_subcategory_id' => $request->related_subcategory_id,
+                'user_id'     => $user->id,
+                'uploaded_by' => $user->id,
+            ]);
+
+            $created++;
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => "$created ebook(s) uploaded successfully."
+        ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Upload failed',
+            'error'   => $e->getMessage()
+        ], 500);
     }
+}
 
     /* ======================================================
        3. VIEW FLIPBOOK (Slug Based)
@@ -316,16 +322,25 @@ class EbookController extends Controller
         return Ebook::findOrFail($id);
     }
 
-    protected function resolvePdfPath(string $pdfPath): string
+ protected function resolvePdfPath(string $pdfPath): string
     {
         $relativePath = ltrim($pdfPath, '/\\');
 
+        // ✅ LOCAL (public folder)
+        $localPath = public_path($relativePath);
+
+        if (is_file($localPath)) {
+            return $localPath;
+        }
+
+        // ✅ LIVE (public_html)
         $livePath = dirname(base_path()) . DIRECTORY_SEPARATOR . 'public_html' . DIRECTORY_SEPARATOR . $relativePath;
 
         if (is_file($livePath)) {
             return $livePath;
         }
 
+        // ✅ fallback (old logic)
         foreach ($this->fileRootCandidates() as $rootPath) {
             $candidate = $rootPath . DIRECTORY_SEPARATOR . $relativePath;
 

@@ -9,95 +9,106 @@ use Illuminate\Support\Str;
 
 class EbookShareController extends Controller
 {
-    public function generate($id)
-    {
-        try {
-            $user = auth()->user();
+  public function generate($id)
+{
+    try {
+        $user = auth()->user();
 
-            if (!$user) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Unauthorized',
-                ], 401);
-            }
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized',
+            ], 401);
+        }
 
-            $hasShareAccess = $user->role === 'admin' || (bool) $user->can_share;
-            if (!$hasShareAccess) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'You are not allowed to share',
-                ], 403);
-            }
+        $hasShareAccess = $user->hasUnlimitedPdfAccess() || (bool) $user->can_share;
 
-            $ebook = Ebook::find($id);
-            if (!$ebook) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Ebook not found',
-                ], 404);
-            }
+        if (!$hasShareAccess) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You are not allowed to share',
+            ], 403);
+        }
 
-            // Same user re-sharing same ebook: regenerate token, don't consume extra slot.
-            if ((int) $ebook->share_enabled === 1 && (int) $ebook->shared_by === (int) $user->id) {
-                $ebook->share_token = Str::random(40);
-                $ebook->share_expires_at = now()->addDays(7);
-                $ebook->current_views = 0;
-                $ebook->max_views = (int) $user->share_limit > 0 ? (int) $user->share_limit : null;
-                $ebook->save();
+        // 🔥 FIX: SUPPORT BOTH ID & SLUG
+        $ebook = is_numeric($id)
+            ? Ebook::find($id)
+            : Ebook::where('slug', $id)->first();
 
-                return response()->json([
-                    'status' => true,
-                    'publicLink' => url('/flip-book/' . $ebook->share_token),
-                    'expires_at' => $ebook->share_expires_at,
-                    'message' => 'New link generated',
-                ]);
-            }
+        if (!$ebook) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Ebook not found',
+            ], 404);
+        }
 
-            // Admin has unlimited share access; users follow their configured limits.
-            $userShareLimit = $user->role === 'admin' ? 0 : (int) $user->share_limit;
-            if ($userShareLimit > 0) {
-                $activeShares = Ebook::where('shared_by', $user->id)
-                    ->where('share_enabled', 1)
-                    ->where(function ($q) {
-                        $q->whereNull('share_expires_at')
-                            ->orWhere('share_expires_at', '>', now());
-                    })
-                    ->where(function ($q) {
-                        $q->whereNull('max_views')
-                            ->orWhere('max_views', 0)
-                            ->orWhereColumn('current_views', '<', 'max_views');
-                    })
-                    ->count();
-
-                if ($activeShares >= $userShareLimit) {
-                    return response()->json([
-                        'status' => false,
-                        'message' => 'Share limit reached',
-                    ], 403);
-                }
-            }
+        // 🔁 Same user re-share
+        if ((int) $ebook->share_enabled === 1 && (int) $ebook->shared_by === (int) $user->id) {
 
             $ebook->share_token = Str::random(40);
             $ebook->share_expires_at = now()->addDays(7);
-            $ebook->share_enabled = 1;
-            $ebook->shared_by = $user->id;
             $ebook->current_views = 0;
-            $ebook->max_views = $userShareLimit > 0 ? $userShareLimit : null;
+            $ebook->max_views = (int) $user->share_limit > 0 ? (int) $user->share_limit : null;
             $ebook->save();
 
             return response()->json([
                 'status' => true,
-                'publicLink' => url('/flip-book/' . $ebook->share_token),
+                'publicLink' => url('/ebook/' . $ebook->slug),
                 'expires_at' => $ebook->share_expires_at,
+                'message' => 'New link generated',
             ]);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Share failed',
-                'error' => $e->getMessage(),
-            ], 500);
         }
+
+        // 📊 Share limit logic
+        $userShareLimit = $user->hasUnlimitedPdfAccess() ? 0 : (int) $user->share_limit;
+
+        if ($userShareLimit > 0) {
+
+            $activeShares = Ebook::where('shared_by', $user->id)
+                ->where('share_enabled', 1)
+                ->where(function ($q) {
+                    $q->whereNull('share_expires_at')
+                      ->orWhere('share_expires_at', '>', now());
+                })
+                ->where(function ($q) {
+                    $q->whereNull('max_views')
+                      ->orWhere('max_views', 0)
+                      ->orWhereColumn('current_views', '<', 'max_views');
+                })
+                ->count();
+
+            if ($activeShares >= $userShareLimit) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Share limit reached',
+                ], 403);
+            }
+        }
+
+        // 🔥 Generate new share
+        $ebook->share_token = Str::random(40);
+        $ebook->share_expires_at = now()->addDays(7);
+        $ebook->share_enabled = 1;
+        $ebook->shared_by = $user->id;
+        $ebook->current_views = 0;
+        $ebook->max_views = $userShareLimit > 0 ? $userShareLimit : null;
+        $ebook->save();
+
+        return response()->json([
+            'status' => true,
+            'publicLink' => url('/flip-book/' . $ebook->share_token),
+            'expires_at' => $ebook->share_expires_at,
+        ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Share failed',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
     public function view($token)
     {

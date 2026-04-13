@@ -8,6 +8,23 @@
         <p class="text-muted">All uploaded ebooks with uploader details</p>
     </div>
 
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ route('admin.ebooks') }}" class="row g-3 align-items-center" id="ebookSearchForm">
+                <div class="col-md-10">
+                    <div class="ebook-search-input-wrap">
+                        <i class="bi bi-search ebook-search-icon"></i>
+                        <input type="text" name="search" class="form-control" id="ebookSearchInput"
+                            placeholder="Search title, file title, category, uploader..." value="{{ $search ?? '' }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ route('admin.ebooks') }}" class="btn btn-outline-secondary w-100">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if (session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
@@ -41,11 +58,12 @@
                             <tr>
                                 <td class="sticky-action-col">
                                     <div class="action-compact-group">
-                                        <a href="{{ route('admin.ebooks.edit', $ebook->id) }}" class="btn btn-sm btn-action-edit">
+                                        <a href="{{ route('admin.ebooks.edit', $ebook->id) }}"
+                                            class="btn btn-sm btn-action-edit">
                                             Edit
                                         </a>
-                                        <a href="{{ route('ebook.view', $ebook->slug) }}" class="btn btn-sm btn-action-preview"
-                                            target="_blank" rel="noopener">
+                                        <a href="{{ route('ebook.view', $ebook->slug) }}"
+                                            class="btn btn-sm btn-action-preview" target="_blank" rel="noopener">
                                             Preview
                                         </a>
                                         <button type="button" class="btn btn-sm btn-action-delete"
@@ -68,6 +86,9 @@
                                 <td colspan="6" class="text-center text-muted py-4">No ebooks found.</td>
                             </tr>
                         @endforelse
+                        <tr id="ebookLiveEmptyState" style="display:none;">
+                            <td colspan="6" class="text-center text-muted py-4">No matching ebooks found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -83,6 +104,24 @@
     .ebooks-table-wrap {
         overflow-x: auto;
         overflow-y: visible;
+    }
+
+    .ebook-search-input-wrap {
+        position: relative;
+    }
+
+    .ebook-search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.95rem;
+        pointer-events: none;
+    }
+
+    #ebookSearchInput {
+        padding-left: 2.4rem;
     }
 
     .ebooks-table {
@@ -166,3 +205,44 @@
         background: #def3ff;
     }
 </style>
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('ebookSearchInput');
+            const tableBody = document.querySelector('.ebooks-table tbody');
+            const liveEmptyState = document.getElementById('ebookLiveEmptyState');
+
+            if (!searchInput || !tableBody) return;
+
+            const dataRows = Array.from(tableBody.querySelectorAll('tr')).filter((row) => row.id !==
+                'ebookLiveEmptyState');
+
+            const applyLiveFilter = () => {
+                const keyword = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+
+                dataRows.forEach((row) => {
+                    const rowText = row.innerText.toLowerCase();
+                    const shouldShow = keyword === '' || rowText.includes(keyword);
+
+                    row.style.display = shouldShow ? '' : 'none';
+
+                    if (shouldShow) {
+                        visibleCount++;
+                    }
+                });
+
+                if (liveEmptyState) {
+                    liveEmptyState.style.display = visibleCount === 0 ? '' : 'none';
+                }
+            };
+
+            searchInput.addEventListener('input', function() {
+                applyLiveFilter();
+            });
+
+            applyLiveFilter();
+        });
+    </script>
+@endpush
