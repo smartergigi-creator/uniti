@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class EbookShareController extends Controller
 {
-  public function generate($id)
+public function generate($slug)
 {
     try {
         $user = auth()->user();
@@ -30,10 +30,7 @@ class EbookShareController extends Controller
             ], 403);
         }
 
-        //  FIX: SUPPORT BOTH ID & SLUG
-        $ebook = is_numeric($id)
-            ? Ebook::find($id)
-            : Ebook::where('slug', $id)->first();
+        $ebook = Ebook::where('slug', $slug)->first();
 
         if (!$ebook) {
             return response()->json([
@@ -42,39 +39,19 @@ class EbookShareController extends Controller
             ], 404);
         }
 
-        // 🔁 Same user re-share
         if ((int) $ebook->share_enabled === 1 && (int) $ebook->shared_by === (int) $user->id) {
-
-            $ebook->share_token = Str::random(40);
-            $ebook->share_expires_at = now()->addDays(7);
-            $ebook->current_views = 0;
-            $ebook->max_views = (int) $user->share_limit > 0 ? (int) $user->share_limit : null;
-            $ebook->save();
-
             return response()->json([
                 'status' => true,
-                'publicLink' => url('/ebook/' . $ebook->slug),
-                'expires_at' => $ebook->share_expires_at,
-                'message' => 'New link generated',
+                'publicLink' => url('/flip-book/' . $ebook->slug),
+                'message' => 'Link already active',
             ]);
         }
 
-        // 📊 Share limit logic
         $userShareLimit = $user->hasUnlimitedPdfAccess() ? 0 : (int) $user->share_limit;
 
         if ($userShareLimit > 0) {
-
             $activeShares = Ebook::where('shared_by', $user->id)
                 ->where('share_enabled', 1)
-                ->where(function ($q) {
-                    $q->whereNull('share_expires_at')
-                      ->orWhere('share_expires_at', '>', now());
-                })
-                ->where(function ($q) {
-                    $q->whereNull('max_views')
-                      ->orWhere('max_views', 0)
-                      ->orWhereColumn('current_views', '<', 'max_views');
-                })
                 ->count();
 
             if ($activeShares >= $userShareLimit) {
@@ -85,23 +62,17 @@ class EbookShareController extends Controller
             }
         }
 
-        //  Generate new share
-        $ebook->share_token = Str::random(40);
-        $ebook->share_expires_at = now()->addDays(7);
         $ebook->share_enabled = 1;
         $ebook->shared_by = $user->id;
-        $ebook->current_views = 0;
-        $ebook->max_views = $userShareLimit > 0 ? $userShareLimit : null;
         $ebook->save();
 
         return response()->json([
             'status' => true,
-            'publicLink' => url('/flip-book/' . $ebook->share_token),
-            'expires_at' => $ebook->share_expires_at,
+            'publicLink' => url('/flip-book/' . $ebook->slug),
+            'message' => 'Share link generated successfully',
         ]);
 
     } catch (\Throwable $e) {
-
         return response()->json([
             'status' => false,
             'message' => 'Share failed',

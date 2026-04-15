@@ -158,108 +158,125 @@ class SerpAuthController extends Controller
         }
     }
     public function login(Request $request)
-{
-    $request->validate([
-        'username' => 'required',
-        'password' => 'required',
-        'remember' => 'nullable|boolean',
-    ]);
-
-    $remember = $request->boolean('remember');
-    $serpId = trim((string) $request->username);
-
-    try {
-        $response = Http::timeout(15)->withHeaders([
-            'Content-Type' => 'application/json',
-        ])->post('https://api-serp.smarter.com.ph/api/auth/login', [
-            'username' => $request->username,
-            'password' => $request->password,
+    {
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+            'remember' => 'nullable|boolean',
         ]);
 
-        if (!$response->successful()) {
-            return back()
-                ->with('error', 'Invalid credentials')
-                ->withInput($request->only('username'));
-        }
+        $remember = $request->boolean('remember');
+        $serpId = trim((string) $request->username);
 
-        $serp = $response->json();
-
-        if (!($serp['success'] ?? true)) {
-            return back()
-                ->with('error', 'Invalid SERP credentials')
-                ->withInput($request->only('username'));
-        }
-
-        $tokenPayload = $this->extractTokenPayload($serp);
-
-        if (!$tokenPayload['token'] || !$tokenPayload['refresh_token']) {
-            return back()
-                ->with('error', 'SERP login response missing token details.')
-                ->withInput($request->only('username'));
-        }
-
-        $apiName = $tokenPayload['name'] ?? null;
-        $apiEmail = $tokenPayload['email'] ?? null;
-
-        // 🔍 FIND USER
-        $user = User::where('serp_id', $serpId)
-            ->orWhere('name', $serpId)
-            ->first();
-
-        if ($user) {
-
-            // ✅ FORCE UPDATE FROM API
-            if (!empty($apiName) && $user->name !== $apiName) {
-                $user->name = $apiName;
-            }
-
-            if (!empty($apiEmail) && $user->email !== $apiEmail) {
-                $user->email = $apiEmail;
-            }
-
-            $user->serp_id = $user->serp_id ?? $serpId;
-            $user->serp_token = $tokenPayload['token'];
-            $user->status = 'active';
-
-            $user->save();
-
-        } else {
-
-            // 🆕 CREATE USER
-            $user = User::create([
-                'serp_id' => $serpId,
-                'name' => $apiName ?? $serpId,
-                'email' => $apiEmail ?? ($serpId . '@serp.local'),
-                'serp_token' => $tokenPayload['token'],
-                'status' => 'active',
-                'created_from' => 'serp',
-                'role' => 'user',
-                'can_upload' => false,
-                'can_share' => false,
-                'upload_limit' => 0,
-                'share_limit' => 0,
+        try {
+            //  STEP 1: LOGIN API
+            $response = Http::timeout(15)->withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post('https://api-serp.smarter.com.ph/api/auth/login', [
+                'username' => $request->username,
+                'password' => $request->password,
             ]);
+
+            if (!$response->successful()) {
+                return back()
+                    ->with('error', 'Invalid credentials')
+                    ->withInput($request->only('username'));
+            }
+
+            $serp = $response->json();
+
+            if (!($serp['success'] ?? true)) {
+                return back()
+                    ->with('error', 'Invalid SERP credentials')
+                    ->withInput($request->only('username'));
+            }
+
+            $tokenPayload = $this->extractTokenPayload($serp);
+
+            if (!$tokenPayload['token'] || !$tokenPayload['refresh_token']) {
+                return back()
+                    ->with('error', 'SERP login response missing token details.')
+                    ->withInput($request->only('username'));
+            }
+
+            //  STEP 2: USER PROFILE API (SAFE VERSION)
+            $apiName = null;
+            $apiEmail = null;
+
+            $userResponse = Http::withToken($tokenPayload['token'])
+                ->timeout(10)
+                ->get('https://api-serp.smarter.com.ph/api/user/get');
+
+            if ($userResponse->successful()) {
+                $userData = $userResponse->json();
+
+                $apiName = $userData['name'] ?? null;
+                $apiEmail = $userData['email'] ?? null;
+            } else {
+                Log::warning('SERP USER API FAILED', [
+                    'serp_id' => $serpId,
+                    'status' => $userResponse->status(),
+                ]);
+            }
+
+            //  FIND USER (ONLY BY serp_id)
+            $user = User::where('serp_id', $serpId)->first();
+
+            if ($user) {
+
+                //  FORCE UPDATE (SAFE)
+                if (!empty($apiName)) {
+                    $user->name = $apiName;
+                }
+
+                if (!empty($apiEmail)) {
+                    $user->email = $apiEmail;
+                }
+
+                $user->serp_id = $user->serp_id ?? $serpId;
+                $user->serp_token = $tokenPayload['token'];
+                $user->status = 'active';
+
+                $user->save();
+
+            } else {
+
+                //  CREATE USER
+                $user = User::create([
+                    'serp_id' => $serpId,
+                    'name' => !empty($apiName) ? $apiName : $serpId,
+                    'email' => !empty($apiEmail) ? $apiEmail : ($serpId . '@serp.local'),
+                    'serp_token' => $tokenPayload['token'],
+                    'status' => 'active',
+                    'created_from' => 'serp',
+                    'role' => 'user',
+                    'can_upload' => false,
+                    'can_share' => false,
+                    'upload_limit' => 0,
+                    'share_limit' => 0,
+                ]);
+            }
+
+            //  ENSURE ROLE
+            if (!$user->role) {
+                $user->role = 'user';
+                $user->save();
+            }
+
+            return $this->completeSerpLogin($request, $user, $tokenPayload, $remember);
+
+        } catch (\Throwable $e) {
+
+            Log::error('SERP LOGIN ERROR', [
+                'username' => $request->username,
+                'message' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->with('error', 'Login failed. Please try again.')
+                ->withInput($request->only('username'));
         }
-
-        if (!$user->role) {
-            $user->role = 'user';
-            $user->save();
-        }
-
-        return $this->completeSerpLogin($request, $user, $tokenPayload, $remember);
-
-    } catch (\Throwable $e) {
-
-        Log::error('SERP LOGIN ERROR', [
-            'username' => $request->username,
-            'message' => $e->getMessage(),
-        ]);
-
-        return back()
-            ->with('error', 'Login failed. Please try again.')
-            ->withInput($request->only('username'));
     }
-}
     public function logout(Request $request)
     {
         Auth::logout();

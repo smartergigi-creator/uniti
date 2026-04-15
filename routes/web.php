@@ -67,8 +67,8 @@ Route::middleware(['auth','serp.auth','serp.refresh','nocache'])->group(function
     Route::get('/ebook/{slug}', [EbookController::class, 'view'])
     ->name('ebook.view');
 
-    Route::get('/ebook/{slug}/download', [EbookController::class, 'downloadWatermarked'])
-        ->name('ebook.download');
+    Route::get('/ebook/{slug}/download', [EbookController::class, 'download'])
+    ->name('ebook.download');
 
     Route::post('/ebook/{id}/report-issue', [EbookController::class, 'reportIssue'])
         ->name('ebook.report-issue');
@@ -159,5 +159,5 @@ Route::get('/flip-book/{slug}/download',
     [EbookShareController::class, 'download']
 )->name('ebook.share.download');
 
-Route::get('/ebook/download/{id}', [EbookController::class, 'download'])
-    ->name('ebook.download.legacy');
+// Route::get('/ebook/download/{id}', [EbookController::class, 'download'])
+//     ->name('ebook.download.legacy');

@@ -179,7 +179,7 @@ class EbookController extends Controller
 
         $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        if (!file_exists($pdfPath)) {
+        if (!is_file($pdfPath)) {
             abort(404, 'PDF file not found');
         }
 
@@ -188,13 +188,64 @@ class EbookController extends Controller
         return view('ebook.flipbook', compact('ebook', 'reportRecipients', 'downloadUrl'));
     }
 
-    public function downloadWatermarked($slug, WatermarkedPdfDownloader $downloader)
-    {
-        $ebook = Ebook::where('slug', $slug)->firstOrFail();
-        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+    // public function downloadWatermarked($slug, WatermarkedPdfDownloader $downloader)
+    // {
+    //     $ebook = Ebook::where('slug', $slug)->firstOrFail();
+    //     $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
 
-        abort_unless(is_file($pdfPath), 404, 'PDF file not found');
+    //     abort_unless(is_file($pdfPath), 404, 'PDF file not found');
 
+    //     $payload = $downloader->build(
+    //         $pdfPath,
+    //         $this->downloadFileName($ebook),
+    //         $this->resolveWatermarkLogoPath(),
+    //         'UNITI'
+    //     );
+
+    //     return response($payload['content'], 200, [
+    //         'Content-Type' => 'application/pdf',
+    //         'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
+    //         'Cache-Control' => 'no-store, no-cache, must-revalidate',
+    //     ]);
+    // }
+function Rotate($angle, $x = -1, $y = -1)
+{
+    if ($x == -1)
+        $x = $this->x;
+    if ($y == -1)
+        $y = $this->y;
+
+    if ($this->angle != 0)
+        $this->_out('Q');
+
+    $this->angle = $angle;
+
+    if ($angle != 0) {
+        $angle *= M_PI / 180;
+        $c = cos($angle);
+        $s = sin($angle);
+        $cx = $x * $this->k;
+        $cy = ($this->h - $y) * $this->k;
+
+        $this->_out(sprintf(
+            'q %.5F %.5F %.5F %.5F %.5F %.5F cm',
+            $c, $s, -$s, $c, $cx, $cy
+        ));
+    }
+}
+
+public function download($slug, WatermarkedPdfDownloader $downloader)
+{
+    // ✅ REMOVE share_enabled condition
+    $ebook = Ebook::where('slug', $slug)->firstOrFail();
+
+    $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
+
+    if (!is_file($pdfPath)) {
+        abort(404, 'PDF file not found');
+    }
+
+    try {
         $payload = $downloader->build(
             $pdfPath,
             $this->downloadFileName($ebook),
@@ -207,23 +258,15 @@ class EbookController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $payload['name'] . '"',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
         ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->download(
+            $pdfPath,
+            $this->downloadFileName($ebook)
+        );
     }
-
-    public function download($id, WatermarkedPdfDownloader $downloader)
-    {
-        $ebook = Ebook::findOrFail($id);
-        $pdfPath = $this->resolvePdfPath($ebook->pdf_path);
-
-        if (!file_exists($pdfPath)) {
-            abort(404, 'File not found');
-        }
-
-        try {
-            return $this->downloadWatermarked($ebook->slug, $downloader);
-        } catch (\Throwable $e) {
-            return response()->download($pdfPath, $this->downloadFileName($ebook));
-        }
-    }
+}
 
     public function reportIssue(Request $request, $id)
     {
